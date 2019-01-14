@@ -27,6 +27,13 @@ export class CheWorkspaceMainImpl implements CheWorkspaceMain {
         });
     }
 
+    async $getAll(): Promise<cheApi.workspace.Workspace[]> {
+        return this.cheApiService.getAllWorkspaces().then(workspaces => workspaces, error => {
+            console.log(error);
+            return undefined!;
+        });
+    }
+
     async $getById(workspaceId: string): Promise<cheApi.workspace.Workspace> {
         return this.cheApiService.getWorkspaceById(workspaceId).then(workspace => workspace, error => {
             console.log(error);

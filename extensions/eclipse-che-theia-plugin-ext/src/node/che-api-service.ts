@@ -36,6 +36,20 @@ export class CheApiServiceImpl implements CheApiService {
         }
     }
 
+    async getAllWorkspaces(): Promise<cheApi.workspace.Workspace[]> {
+        try {
+            const wsClient = await this.wsClient();
+            if (wsClient) {
+                return await wsClient!.getAll<cheApi.workspace.Workspace>();
+            }
+
+            return Promise.reject('Cannot create Che API REST Client');
+        } catch (e) {
+            console.log(e);
+            return Promise.reject('Cannot create Che API REST Client');
+        }
+    }
+
     async getWorkspaceById(workspaceId: string): Promise<cheApi.workspace.Workspace> {
         try {
             if (!workspaceId) {

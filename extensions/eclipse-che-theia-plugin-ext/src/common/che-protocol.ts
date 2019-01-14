@@ -19,7 +19,7 @@ export interface CheWorkspace {
 
 export interface CheWorkspaceMain {
     $getCurrentWorkspace(): Promise<cheApi.workspace.Workspace>;
-    // getAll(): Promise<Workspace[]>;
+    $getAll(): Promise<cheApi.workspace.Workspace[]>;
     // getAllByNamespace(namespace: string): Promise<Workspace[]>;
     $getById(workspaceId: string): Promise<cheApi.workspace.Workspace>;
     // create(config: WorkspaceConfig, params: ResourceCreateQueryParams): Promise<any>;
@@ -324,6 +324,8 @@ export const CheApiService = Symbol('CheApiService');
 export interface CheApiService {
 
     currentWorkspace(): Promise<cheApi.workspace.Workspace>;
+
+    getAllWorkspaces(): Promise<cheApi.workspace.Workspace[]>;
 
     getWorkspaceById(workspaceId: string): Promise<cheApi.workspace.Workspace>;
 
