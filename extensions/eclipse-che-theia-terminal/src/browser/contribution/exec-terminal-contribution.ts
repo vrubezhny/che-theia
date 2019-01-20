@@ -50,7 +50,7 @@ export class ExecTerminalFrontendContribution extends TerminalFrontendContributi
         if (serverUrl) {
             registry.registerCommand(NewTerminalInSpecificContainer, {
                 execute: () => {
-                    this.terminalQuickOpen.displayListMachines();
+                    this.terminalQuickOpen.displayListMachines(this.openTerminal);
                 }
             });
             await this.registerTerminalCommandPerContainer(registry);
@@ -70,13 +70,22 @@ export class ExecTerminalFrontendContribution extends TerminalFrontendContributi
                 };
                 registry.registerCommand(termCommandPerContainer, {
                     execute: async () => {
-                        const termWidget = await this.terminalQuickOpen.newTerminalPerContainer(containerName);
-                        this.terminalQuickOpen.activateTerminal(termWidget);
-                        termWidget.start();
+                        this.openTerminalByContainerName(containerName);
                     }
                 });
             }
         }
+    }
+    // todo
+    // export class TerminalOpenHandler {
+
+
+    // }
+
+    protected async openTerminalByContainerName(containerName: string): Promise<void> {
+        const termWidget = await this.terminalQuickOpen.newTerminalPerContainer(containerName, {});
+        termWidget.start();
+        this.open(termWidget, {});
     }
 
     async registerMenus(menus: MenuModelRegistry) {

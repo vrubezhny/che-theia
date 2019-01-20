@@ -15,12 +15,21 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { REMOTE_TERMINAL_WIDGET_FACTORY_ID, RemoteTerminalWidgetFactoryOptions } from '../terminal-widget/remote-terminal-widget';
 import {CHEWorkspaceService} from '../../common/workspace-service';
 import {TerminalApiEndPointProvider} from '../server-definition/terminal-proxy-creator';
-import {TerminalService} from '@theia/terminal/lib/browser/base/terminal-service';
 import {TerminalWidget, TerminalWidgetOptions} from '@theia/terminal/lib/browser/base/terminal-widget';
 import { RemoteTerminalWidget } from '../terminal-widget/remote-terminal-widget';
 
 @injectable()
-export class TerminalQuickOpenService implements TerminalService {
+export class TerminalQuickOpenService {
+    // all: TerminalWidget[];
+    // getById(id: string): TerminalWidget {
+    //     throw new Error("Method not implemented.");
+    // }
+    // open() {
+
+    // }
+    // onDidCreateTerminal;
+    // currentTerminal: TerminalWidget;
+    // onDidChangeCurrentTerminal;
 
     constructor(@inject(QuickOpenService) private readonly quickOpenService: QuickOpenService,
         @inject(WidgetManager) private readonly widgetManager: WidgetManager,
@@ -29,14 +38,6 @@ export class TerminalQuickOpenService implements TerminalService {
         @inject(CHEWorkspaceService) protected readonly workspaceService: CHEWorkspaceService,
         @inject(ApplicationShell) protected readonly shell: ApplicationShell
     ) {
-    }
-
-    activateTerminal(termWidget: TerminalWidget): void {
-        const tabBar = this.shell.getTabBarFor(termWidget);
-        if (!tabBar) {
-            this.shell.addWidget(termWidget, { area: 'bottom' });
-        }
-        this.shell.activateWidget(termWidget.id);
     }
 
     async newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget> {
@@ -78,7 +79,7 @@ export class TerminalQuickOpenService implements TerminalService {
         throw new Error('Unable to create new terminal for machine: ' + containerName);
     }
 
-    async displayListMachines() {
+    async displayListMachines(doOpen: Function) {
         const items: QuickOpenItem[] = [];
         const machines = await this.workspaceService.getMachineList();
 
@@ -88,14 +89,12 @@ export class TerminalQuickOpenService implements TerminalService {
                     continue;
                 }
                 items.push(new NewTerminalItem(machineName, async (newTermItemFunc) => {
-                    const termWidget = await this.newTerminalPerContainer(newTermItemFunc.machineName);
-                    this.activateTerminal(termWidget);
-                    termWidget.start();
+                    doOpen(newTermItemFunc.machineName);
                 }));
             }
         }
 
-        this.open(items, 'Select machine to create new terminal');
+        this.showTerminalItems(items, 'Select machine to create new terminal');
     }
 
     private getOpts(placeholder: string, fuzzyMatchLabel: boolean = true): QuickOpenOptions {
@@ -106,7 +105,7 @@ export class TerminalQuickOpenService implements TerminalService {
         });
     }
 
-    private open(items: QuickOpenItem | QuickOpenItem[], placeholder: string): void {
+    private showTerminalItems(items: QuickOpenItem | QuickOpenItem[], placeholder: string): void {
         this.quickOpenService.open(this.getModel(Array.isArray(items) ? items : [items]), this.getOpts(placeholder));
     }
 
