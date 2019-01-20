@@ -19,6 +19,7 @@ import { BrowserMainMenuFactory } from '@theia/core/lib/browser/menu/browser-men
 import { MenuBar as MenuBarWidget } from '@phosphor/widgets';
 import { TerminalKeybindingContext } from './keybinding-context';
 import { CHEWorkspaceService } from '../../common/workspace-service';
+import { TerminalOpenHandler } from './open-terminal-handler';
 
 export const NewTerminalInSpecificContainer = {
     id: 'terminal-in-specific-container:new',
@@ -50,7 +51,7 @@ export class ExecTerminalFrontendContribution extends TerminalFrontendContributi
         if (serverUrl) {
             registry.registerCommand(NewTerminalInSpecificContainer, {
                 execute: () => {
-                    this.terminalQuickOpen.displayListMachines(this.openTerminal);
+                    this.terminalQuickOpen.displayListMachines(this);
                 }
             });
             await this.registerTerminalCommandPerContainer(registry);
@@ -70,22 +71,12 @@ export class ExecTerminalFrontendContribution extends TerminalFrontendContributi
                 };
                 registry.registerCommand(termCommandPerContainer, {
                     execute: async () => {
-                        this.openTerminalByContainerName(containerName);
+                        const terminalOpenHandler = new TerminalOpenHandler(this.terminalQuickOpen, this, containerName);
+                        terminalOpenHandler.openTerminal();
                     }
                 });
             }
         }
-    }
-    // todo
-    // export class TerminalOpenHandler {
-
-
-    // }
-
-    protected async openTerminalByContainerName(containerName: string): Promise<void> {
-        const termWidget = await this.terminalQuickOpen.newTerminalPerContainer(containerName, {});
-        termWidget.start();
-        this.open(termWidget, {});
     }
 
     async registerMenus(menus: MenuModelRegistry) {

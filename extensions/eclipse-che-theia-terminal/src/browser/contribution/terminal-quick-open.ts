@@ -17,21 +17,14 @@ import {CHEWorkspaceService} from '../../common/workspace-service';
 import {TerminalApiEndPointProvider} from '../server-definition/terminal-proxy-creator';
 import {TerminalWidget, TerminalWidgetOptions} from '@theia/terminal/lib/browser/base/terminal-widget';
 import { RemoteTerminalWidget } from '../terminal-widget/remote-terminal-widget';
+import { TerminalOpenHandler } from './open-terminal-handler';
+import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 
 @injectable()
 export class TerminalQuickOpenService {
-    // all: TerminalWidget[];
-    // getById(id: string): TerminalWidget {
-    //     throw new Error("Method not implemented.");
-    // }
-    // open() {
 
-    // }
-    // onDidCreateTerminal;
-    // currentTerminal: TerminalWidget;
-    // onDidChangeCurrentTerminal;
-
-    constructor(@inject(QuickOpenService) private readonly quickOpenService: QuickOpenService,
+    constructor(
+        @inject(QuickOpenService) private readonly quickOpenService: QuickOpenService,
         @inject(WidgetManager) private readonly widgetManager: WidgetManager,
         @inject(EnvVariablesServer) protected readonly baseEnvVariablesServer: EnvVariablesServer,
         @inject('TerminalApiEndPointProvider') protected readonly termApiEndPointProvider: TerminalApiEndPointProvider,
@@ -43,9 +36,8 @@ export class TerminalQuickOpenService {
     async newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget> {
         let containerName;
 
-        // todo remove rude casting when will be used theia 0.3.16.
-        if ((options as any).attributes) {
-            containerName = (options as any).attributes['CHE_MACHINE_NAME'];
+        if (options.attributes) {
+            containerName = options.attributes['CHE_MACHINE_NAME'];
         }
 
         if (!containerName) {
@@ -79,7 +71,7 @@ export class TerminalQuickOpenService {
         throw new Error('Unable to create new terminal for machine: ' + containerName);
     }
 
-    async displayListMachines(doOpen: Function) {
+    async displayListMachines(terminalService: TerminalService) {
         const items: QuickOpenItem[] = [];
         const machines = await this.workspaceService.getMachineList();
 
@@ -89,7 +81,8 @@ export class TerminalQuickOpenService {
                     continue;
                 }
                 items.push(new NewTerminalItem(machineName, async (newTermItemFunc) => {
-                    doOpen(newTermItemFunc.machineName);
+                    const terminalOpenHandler = new TerminalOpenHandler(this, terminalService, machineName);
+                    terminalOpenHandler.openTerminal();
                 }));
             }
         }
