@@ -39,6 +39,18 @@ declare module '@eclipse-che/plugin' {
         export function getById(id: string): PromiseLike<cheApi.factory.Factory>;
     }
 
+    export namespace ssh {
+        export function generate(service: string, name: string): Promise<cheApi.ssh.SshPair>;
+
+        export function create(sshKeyPair: cheApi.ssh.SshPair): Promise<void>;
+
+        export function get(service: string, name: string): Promise<cheApi.ssh.SshPair>;
+
+        export function getAll(service: string): Promise<cheApi.ssh.SshPair[]>;
+
+        export function deleteKey(service: string, name: string): Promise<void>;
+    }
+
     /**
      * Namespace for variables substitution functionality.
      */
@@ -89,7 +101,6 @@ declare module '@eclipse-che/plugin' {
 
     export namespace task {
         export function registerTaskRunner(type: string, runner: TaskRunner): Promise<Disposable>;
-        /** Needs to be executed when the task is finished */
         export function fireTaskExited(id: number): Promise<void>;
     }
 
@@ -119,12 +130,6 @@ declare module '@eclipse-che/plugin' {
     }
 
     export interface TaskConfiguration {
-        /**
-         * Source of the task configuration.
-         * For a configured task, it is the name of the root folder, while for a provided task, it is the name of the provider.
-         */
-        readonly source: string;
-        /** A label that uniquely identifies a task configuration per source */
         readonly type: string;
         /** A label that uniquely identifies a task configuration */
         readonly label: string;
