@@ -9,7 +9,7 @@
  **********************************************************************/
 
 import * as theia from '@theia/plugin';
-import { ContainersService, IContainer } from './containers-service';
+import { IContainer } from './containers-service';
 
 interface ITreeNodeItem {
     id: string;
@@ -17,7 +17,10 @@ interface ITreeNodeItem {
     tooltip: string;
     iconPath?: string;
     parentId?: string;
-    commandId?: string;
+    command?: {
+        id: string;
+        arguments?: string[]
+    },
     isExpanded?: boolean;
 }
 
@@ -34,19 +37,20 @@ export class ContainersTreeDataProvider implements theia.TreeDataProvider<ITreeN
 
         this.onDidChangeTreeDataEmitter = new theia.EventEmitter<undefined>();
         this.onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
-
-        const containersService = new ContainersService();
-
-        this.updateContainersTreeData(containersService).then(() => {
-            this.onDidChangeTreeDataEmitter.fire();
-        });
     }
 
-    private async updateContainersTreeData(containersService: ContainersService): Promise<void> {
+    updateContainersTreeData(containers: IContainer[]): void {
         this.ids.length = 0;
         this.treeNodeItems.length = 0;
-        await containersService.updateMachines();
-        containersService.containers.forEach((container: IContainer) => {
+        const pluginsDir = {
+            id: this.getRandId(),
+            name: 'plugins',
+            tooltip: 'che-plugin containers',
+            isExpanded: false
+        };
+        let hasPlugin = false;
+
+        containers.forEach((container: IContainer) => {
             const treeItem: ITreeNodeItem = {
                 id: this.getRandId(),
                 name: container.name,
@@ -69,6 +73,13 @@ export class ContainersTreeDataProvider implements theia.TreeDataProvider<ITreeN
                 default:
                     treeItem.iconPath = 'fa-circle-o';
             }
+            if (container.isDev) {
+                treeItem.tooltip = 'dev ' + treeItem.tooltip;
+            } else {
+                hasPlugin = true;
+                treeItem.tooltip = 'che-plugin ' + treeItem.tooltip;
+                treeItem.parentId = pluginsDir.id;
+            }
             this.treeNodeItems.push(treeItem);
             this.treeNodeItems.push({
                 id: this.getRandId(),
@@ -76,7 +87,7 @@ export class ContainersTreeDataProvider implements theia.TreeDataProvider<ITreeN
                 name: 'New terminal',
                 iconPath: 'fa-terminal medium-yellow',
                 tooltip: `open a new terminal for ${container.name}`,
-                commandId: `terminal-for-${container.name}-container:new`
+                command: { id: `terminal-for-${container.name}-container:new` }
             });
             const servers = container.servers;
             if (!servers) {
@@ -107,12 +118,18 @@ export class ContainersTreeDataProvider implements theia.TreeDataProvider<ITreeN
                     tooltip: server.url ? server.url : 'endpoint'
                 };
                 if (server.url && server.url.startsWith('http')) {
-                    treeNodeItem.name = ` [${serverName}](${server.url})`;
+                    treeNodeItem.name = serverName;
                     treeNodeItem.iconPath = 'fa-share medium-blue';
+                    treeNodeItem.command = { id: 'theia.open', arguments: [server.url] };
+                    treeNodeItem.tooltip = 'open in a new tab  ' + treeNodeItem.tooltip;
                 }
                 this.treeNodeItems.push(treeNodeItem);
             });
         });
+        if (hasPlugin) {
+            this.treeNodeItems.push(pluginsDir);
+        }
+        this.onDidChangeTreeDataEmitter.fire();
     }
 
     private getRandId(): string {
@@ -136,14 +153,18 @@ export class ContainersTreeDataProvider implements theia.TreeDataProvider<ITreeN
             label: element.name,
             tooltip: element.tooltip
         };
-        if (element.isExpanded) {
+        if (element.isExpanded === true) {
             treeItem.collapsibleState = theia.TreeItemCollapsibleState.Expanded;
+        } else if (element.isExpanded === false) {
+            treeItem.collapsibleState = theia.TreeItemCollapsibleState.Collapsed;
+        } else {
+            treeItem.collapsibleState = theia.TreeItemCollapsibleState.None;
         }
         if (element.iconPath) {
             treeItem.iconPath = element.iconPath;
         }
-        if (element.commandId) {
-            treeItem.command = { id: element.commandId };
+        if (element.command) {
+            treeItem.command = element.command;
         }
         return treeItem;
     }
