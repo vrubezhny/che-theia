@@ -19,12 +19,15 @@ import { BrowserMainMenuFactory } from '@theia/core/lib/browser/menu/browser-men
 import { MenuBar as MenuBarWidget } from '@phosphor/widgets';
 import { TerminalKeybindingContext } from './keybinding-context';
 import { CHEWorkspaceService } from '../../common/workspace-service';
-import { TerminalOpenHandler } from './open-terminal-handler';
 
 export const NewTerminalInSpecificContainer = {
     id: 'terminal-in-specific-container:new',
     label: 'Open Terminal in specific container'
 };
+
+export interface OpenTerminalHandler {
+    (containerName: string)
+}
 
 @injectable()
 export class ExecTerminalFrontendContribution extends TerminalFrontendContribution {
@@ -51,7 +54,9 @@ export class ExecTerminalFrontendContribution extends TerminalFrontendContributi
         if (serverUrl) {
             registry.registerCommand(NewTerminalInSpecificContainer, {
                 execute: () => {
-                    this.terminalQuickOpen.displayListMachines(this);
+                    this.terminalQuickOpen.displayListMachines((containerName) => {
+                        this.openTerminalByContainerName(containerName);
+                    });
                 }
             });
             await this.registerTerminalCommandPerContainer(registry);
@@ -67,16 +72,19 @@ export class ExecTerminalFrontendContribution extends TerminalFrontendContributi
             if (containers.hasOwnProperty(containerName)) {
                 const termCommandPerContainer: Command = {
                     id: "terminal-for-" + containerName + "-container:new",
-                    label: "New terminal for " + containerName // todo Final solution about command labels
+                    label: "New terminal for " + containerName
                 };
                 registry.registerCommand(termCommandPerContainer, {
-                    execute: async () => {
-                        const terminalOpenHandler = new TerminalOpenHandler(this.terminalQuickOpen, this, containerName);
-                        terminalOpenHandler.openTerminal();
-                    }
+                    execute: async () => this.openTerminalByContainerName(containerName)
                 });
             }
         }
+    }
+
+    async openTerminalByContainerName(containerName: string): Promise<void> {
+        const termWidget = await this.terminalQuickOpen.newTerminalPerContainer(containerName, {});
+        this.open(termWidget, {});
+        termWidget.start();
     }
 
     async registerMenus(menus: MenuModelRegistry) {

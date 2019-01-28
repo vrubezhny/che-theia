@@ -17,8 +17,7 @@ import {CHEWorkspaceService} from '../../common/workspace-service';
 import {TerminalApiEndPointProvider} from '../server-definition/terminal-proxy-creator';
 import {TerminalWidget, TerminalWidgetOptions} from '@theia/terminal/lib/browser/base/terminal-widget';
 import { RemoteTerminalWidget } from '../terminal-widget/remote-terminal-widget';
-import { TerminalOpenHandler } from './open-terminal-handler';
-import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { OpenTerminalHandler } from './exec-terminal-contribution';
 
 @injectable()
 export class TerminalQuickOpenService {
@@ -71,7 +70,7 @@ export class TerminalQuickOpenService {
         throw new Error('Unable to create new terminal for machine: ' + containerName);
     }
 
-    async displayListMachines(terminalService: TerminalService) {
+    async displayListMachines(doOpen: OpenTerminalHandler) {
         const items: QuickOpenItem[] = [];
         const machines = await this.workspaceService.getMachineList();
 
@@ -81,8 +80,7 @@ export class TerminalQuickOpenService {
                     continue;
                 }
                 items.push(new NewTerminalItem(machineName, async (newTermItemFunc) => {
-                    const terminalOpenHandler = new TerminalOpenHandler(this, terminalService, machineName);
-                    terminalOpenHandler.openTerminal();
+                    doOpen(newTermItemFunc.machineName);
                 }));
             }
         }
