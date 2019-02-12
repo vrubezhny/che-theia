@@ -43,6 +43,16 @@ export interface CheFactoryMain {
 }
 
 /**
+ * Telemetry plugin API
+ */
+export interface CheTelemetry {
+}
+
+export interface CheTelemetryMain {
+    $event(id: string, properties: any): Promise<any>;
+}
+
+/**
  * Variables plugin API
  */
 export interface CheVariables {
@@ -327,6 +337,9 @@ export const PLUGIN_RPC_CONTEXT = {
 
     CHE_FACTORY: <ProxyIdentifier<CheFactory>>createProxyIdentifier<CheFactory>('CheFactory'),
     CHE_FACTORY_MAIN: <ProxyIdentifier<CheFactoryMain>>createProxyIdentifier<CheFactoryMain>('CheFactoryMain'),
+
+    CHE_TELEMETRY: <ProxyIdentifier<CheTelemetry>>createProxyIdentifier<CheTelemetry>('CheTelemetry'),
+    CHE_TELEMETRY_MAIN: <ProxyIdentifier<CheTelemetryMain>>createProxyIdentifier<CheTelemetryMain>('CheTelemetryMain'),
 
     CHE_VARIABLES: <ProxyIdentifier<CheVariables>>createProxyIdentifier<CheVariables>('CheVariables'),
     CHE_VARIABLES_MAIN: <ProxyIdentifier<CheVariablesMain>>createProxyIdentifier<CheVariablesMain>('CheVariablesMain'),

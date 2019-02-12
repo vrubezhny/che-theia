@@ -11,6 +11,7 @@ import { CheApiService } from '../common/che-protocol';
 import { che as cheApi } from '@eclipse-che/api';
 import WorkspaceClient, { IRestAPIConfig, IRemoteAPI } from '@eclipse-che/workspace-client';
 import { injectable } from 'inversify';
+import axios from 'axios';
 
 @injectable()
 export class CheApiServiceImpl implements CheApiService {
@@ -78,6 +79,22 @@ export class CheApiServiceImpl implements CheApiService {
             if (client) {
                 return await client.getFactory<cheApi.factory.Factory>(factoryId);
             }
+
+            return Promise.reject(`Unable to get factory with ID ${factoryId}`);
+        } catch (e) {
+            return Promise.reject('Unable to create Che API REST Client');
+        }
+    }
+
+    async submitTelemetryEvent(id: string, properties: any, ip: string, agent: string, resolution: string): Promise<void> {
+        try {
+            axios.get('http://localhost:4567/telemetry/event/WORKSPACE_STARTED')
+                .then(function(response: any) {
+                    console.log("Event sent to telemetry endpoint: ", response.config.url);
+                })
+                .catch(function(error: any) {
+                    console.log(error);
+                });
 
             return Promise.reject(`Unable to get factory with ID ${factoryId}`);
         } catch (e) {

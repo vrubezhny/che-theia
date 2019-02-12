@@ -17,6 +17,7 @@ import { CheVariablesImpl } from './che-variables';
 import { PLUGIN_RPC_CONTEXT } from '../common/che-protocol';
 import { CheFactoryImpl } from './che-factory';
 import { CheTaskImpl } from './che-task-impl';
+import { CheTelemetryImpl } from './che-telemetry';
 
 export interface CheApiFactory {
     (plugin: Plugin): typeof che;
@@ -27,6 +28,7 @@ export function createAPIFactory(rpc: RPCProtocol): CheApiFactory {
     const cheFactoryImpl = rpc.set(PLUGIN_RPC_CONTEXT.CHE_FACTORY, new CheFactoryImpl(rpc));
     const cheVariablesImpl = rpc.set(PLUGIN_RPC_CONTEXT.CHE_VARIABLES, new CheVariablesImpl(rpc));
     const cheTaskImpl = rpc.set(PLUGIN_RPC_CONTEXT.CHE_TASK, new CheTaskImpl(rpc));
+    const cheTelemetryImpl = rpc.set(PLUGIN_RPC_CONTEXT.CHE_TELEMETRY, new CheTelemetryImpl(rpc));
 
     return function (plugin: Plugin): typeof che {
         const workspace: typeof che.workspace = {
@@ -77,6 +79,12 @@ export function createAPIFactory(rpc: RPCProtocol): CheApiFactory {
             }
         };
 
+        const telemetry: typeof che.telemetry = {
+            event(id: string, properties: any): PromiseLike<void> {
+                return cheTelemetryImpl.event(id, properties);
+            }
+        };
+
         const variables: typeof che.variables = {
             registerVariable(variable: che.Variable): Promise<che.Disposable> {
                 return cheVariablesImpl.registerVariable(variable);
@@ -99,7 +107,8 @@ export function createAPIFactory(rpc: RPCProtocol): CheApiFactory {
             workspace,
             factory,
             variables,
-            task
+            task,
+            telemetry
         };
     };
 

@@ -39,6 +39,10 @@ declare module '@eclipse-che/plugin' {
         export function getById(id: string): PromiseLike<cheApi.factory.Factory>;
     }
 
+    export namespace telemetry {
+        export function event(id: string, properties: any): PromiseLike<void>;
+    }
+
     /**
      * Namespace for variables substitution functionality.
      */
