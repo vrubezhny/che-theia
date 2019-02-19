@@ -49,6 +49,7 @@ export interface CheTelemetry {
 }
 
 export interface CheTelemetryMain {
+    // tslint:disable-next-line: no-any
     $event(id: string, properties: any): Promise<any>;
 }
 
@@ -363,6 +364,7 @@ export interface CheApiService {
 
     getFactoryById(factoryId: string): Promise<cheApi.factory.Factory>;
 
+    // tslint:disable-next-line: no-any
     submitTelemetryEvent(id: string, properties: any, ip: string, agent: string, resolution: string): Promise<void>;
 }
 

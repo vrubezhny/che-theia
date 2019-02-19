@@ -80,6 +80,7 @@ export function createAPIFactory(rpc: RPCProtocol): CheApiFactory {
         };
 
         const telemetry: typeof che.telemetry = {
+            // tslint:disable-next-line: no-any
             event(id: string, properties: any): PromiseLike<void> {
                 return cheTelemetryImpl.event(id, properties);
             }

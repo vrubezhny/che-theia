@@ -11,7 +11,7 @@ import { CheApiService } from '../common/che-protocol';
 import { che as cheApi } from '@eclipse-che/api';
 import WorkspaceClient, { IRestAPIConfig, IRemoteAPI } from '@eclipse-che/workspace-client';
 import { injectable } from 'inversify';
-import { TelemetryClient, Event } from '@dfatwork-pkgs/workspace-telemetry-client';
+import { TelemetryClient, Event, EventProperties, IRequestError } from '@dfatwork-pkgs/workspace-telemetry-client';
 
 @injectable()
 export class CheApiServiceImpl implements CheApiService {
@@ -87,19 +87,21 @@ export class CheApiServiceImpl implements CheApiService {
         }
     }
 
+    // tslint:disable-next-line: no-any
     async submitTelemetryEvent(id: string, properties: any, ip: string, agent: string, resolution: string): Promise<void> {
         try {
+            const props: EventProperties = {};
             const event: Event = {
                 id: id,
                 ip: ip,
                 userId: 'aUserId',
                 ownerId: 'anOwnerId',
                 agent: agent,
-                properties: []
+                properties: [props]
             };
-            this.telemetryClient.event(event).then(function(response: any) {
-                console.log("Event sent to telemetry endpoint: ", response.config.url);
-            }).catch(function(error: any) {
+            this.telemetryClient.event(event).then(function () {
+                console.log('Event sent to the telemetry endpoint');
+            }).catch(function (error: IRequestError) {
                 console.log(error);
             });
 

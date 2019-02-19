@@ -20,6 +20,7 @@ export class CheTelemetryMainImpl implements CheTelemetryMain {
         this.cheApiService = container.get(CheApiService);
     }
 
+    // tslint:disable-next-line: no-any
     async $event(id: string, properties: any): Promise<void> {
         // TODO : get the infos from the browser
         const ip = 'anIpExample';
