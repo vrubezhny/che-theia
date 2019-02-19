@@ -363,6 +363,7 @@ export interface CheApiService {
 
     getFactoryById(factoryId: string): Promise<cheApi.factory.Factory>;
 
+    submitTelemetryEvent(id: string, properties: any, ip: string, agent: string, resolution: string): Promise<void>;
 }
 
 export const CHE_TASK_SERVICE_PATH = '/che-task-service';
