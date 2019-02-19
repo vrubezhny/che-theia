@@ -16,7 +16,7 @@ export class CheTelemetryImpl implements CheTelemetry {
     private readonly telemetryMain: CheTelemetryMain;
 
     constructor(rpc: RPCProtocol) {
-        this.telemetryMain = rpc.getProxy(PLUGIN_RPC_CONTEXT.CHE_FACTORY_MAIN);
+        this.telemetryMain = rpc.getProxy(PLUGIN_RPC_CONTEXT.CHE_TELEMETRY_MAIN);
     }
 
     async event(id: string, properties: any): Promise<void> {
