@@ -40,7 +40,7 @@ declare module '@eclipse-che/plugin' {
     }
 
     export namespace telemetry {
-        export function event(id: string, properties: any): PromiseLike<void>;
+        export function event(id: string, properties: any): Promise<void>;
     }
 
     /**
