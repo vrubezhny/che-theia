@@ -9,6 +9,14 @@
   dependencies:
     regenerator-runtime "^0.12.0"
 
+"@dfatwork-pkgs/workspace-telemetry-client@^0.0.1-1550520285":
+  version "0.0.1-1550520285"
+  resolved "https://registry.yarnpkg.com/@dfatwork-pkgs/workspace-telemetry-client/-/workspace-telemetry-client-0.0.1-1550520285.tgz#64406e9f9ad068e918d57950f50d6fa9e0610d76"
+  dependencies:
+    "@eclipse-che/api" "^6.16.1"
+    axios "0.18.0"
+    moxios "git://github.com/stoplightio/moxios#v1.3.0"
+
 "@phosphor/algorithm@^1.1.2":
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@phosphor/algorithm/-/algorithm-1.1.2.tgz#fd1de9104c9a7f34e92864586ddf2e7f2e7779e8"

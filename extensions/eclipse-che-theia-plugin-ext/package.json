@@ -16,7 +16,8 @@
         "@eclipse-che/plugin": "0.0.1",
         "@eclipse-che/workspace-client": "latest",
         "@theia/core": "next",
-        "@theia/plugin-ext": "next"
+        "@theia/plugin-ext": "next",
+        "@dfatwork-pkgs/workspace-telemetry-client": "^0.0.1-1550520285"
     },
     "devDependencies": {
         "clean-webpack-plugin": "^0.1.19",
