@@ -9,25 +9,22 @@
  **********************************************************************/
 
 import { interfaces } from 'inversify';
-import { RPCProtocol } from '@theia/plugin-ext/lib/api/rpc-protocol';
-import { PLUGIN_RPC_CONTEXT, CheTelemetry, CheTelemetryMain } from '../common/che-protocol';
+import { CheTelemetryMain } from '../common/che-protocol';
+import { CheApiService } from '../common/che-protocol';
 
 export class CheTelemetryMainImpl implements CheTelemetryMain {
 
-    private readonly proxy: CheTelemetry;
+    private readonly cheApiService: CheApiService;
 
-    constructor(container: interfaces.Container, rpc: RPCProtocol) {
-        this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.CHE_TELEMETRY);
+    constructor(container: interfaces.Container) {
+        this.cheApiService = container.get(CheApiService);
     }
 
     async $event(id: string, properties: any): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            this.proxy.event(id, properties).then(() => {
-                resolve();
-            }).catch((error: any) => {
-                reject(error);
-            });
-        });
+        // TODO : get the infos from the browser
+        const ip = 'anIpExample';
+        const agent = 'anAgentExample';
+        const resolution = 'anResolutionExample';
+        return this.cheApiService.submitTelemetryEvent(id, properties, ip, agent, resolution);
     }
-
 }
