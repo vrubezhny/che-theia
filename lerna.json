@@ -1,7 +1,7 @@
 {
   "lerna": "2.2.0",
   "version": "0.0.1",
-  "npmClient": "yarn",
+  "npmClient": "/home/theia-dev/.npm-global/bin/yarn",
   "command": {
     "run": {
       "stream": true
