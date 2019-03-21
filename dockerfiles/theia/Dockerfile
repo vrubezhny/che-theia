@@ -39,11 +39,9 @@ RUN if [ ! -z "${GITHUB_TOKEN-}" ]; then \
       fi \
     fi
 
-#invalidate cashe
-ADD https://${GITHUB_TOKEN}:x-oauth-basic@api.github.com/repos/theia-ide/theia/git/${GIT_REF} /tmp/branch_info.json
 
 # Clone theia
-RUN git clone --branch ${GIT_BRANCH_NAME}  --single-branch --depth 1 https://github.com/theia-ide/theia ${HOME}/theia-source-code
+RUN git clone --branch ab/fixDeployingPluginsById  --single-branch --depth 1 https://github.com/theia-ide/theia ${HOME}/theia-source-code
 
 # Add patches
 ADD src/patches ${HOME}/patches

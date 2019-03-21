@@ -304,16 +304,20 @@ class PluginDeployerHandlerImpl implements PluginDeployerHandler {
         this.reader.initialize();
     }
 
-    async deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void> {
+    async deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<PluginMetadata[]> {
         if (frontendPlugins.length > 0) {
             logger.error('Frontend plug-in cannot be deployed in sidecar container');
         }
+        return [];
     }
 
-    async deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void> {
+    async deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<PluginMetadata[]> {
+        const deployedPlugins: PluginMetadata[] = [];
+
         for (const plugin of backendPlugins) {
             const metadata = await this.reader.getPluginMetadata(plugin.path());
             if (metadata) {
+                deployedPlugins.push(metadata);
                 currentBackendPluginsMetadata.push(metadata);
                 const path = metadata.model.entryPoint.backend || plugin.path();
                 this.logger.info(`Backend plug-in "${metadata.model.name}@${metadata.model.version}" from "${path} is now available"`);
@@ -327,5 +331,6 @@ class PluginDeployerHandlerImpl implements PluginDeployerHandler {
             this.announced = true;
         }
 
+        return deployedPlugins;
     }
 }
