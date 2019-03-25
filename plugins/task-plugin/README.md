@@ -22,7 +22,7 @@ The format of a Che task is the following:
     "target": {
         "workspaceId": "",
         "machineName": "",
-        "workingDir": ""
+        "workdir": ""
     },
     "previewUrl": ""
 }

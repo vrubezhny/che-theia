@@ -53,8 +53,8 @@ export class CheTaskProvider {
             resultTarget.machineName = await this.machinePicker.pick();
         }
 
-        if (target && target.workingDir) {
-            resultTarget.workingDir = target.workingDir;
+        if (target && target.workdir) {
+            resultTarget.workdir = target.workdir;
         }
 
         const command = await che.variables.resolve(cheTaskDefinition.command);
@@ -77,7 +77,7 @@ export class CheTaskProvider {
                 type: CHE_TASK_TYPE,
                 command: command.commandLine,
                 target: {
-                    workingDir: this.getCommandAttribute(command, WORKING_DIR_ATTRIBUTE),
+                    workdir: this.getCommandAttribute(command, WORKING_DIR_ATTRIBUTE),
                     machineName: this.getCommandAttribute(command, MACHINE_NAME_ATTRIBUTE)
                 },
                 previewUrl: this.getCommandAttribute(command, PREVIEW_URL_ATTRIBUTE)

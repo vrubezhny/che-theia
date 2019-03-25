@@ -66,7 +66,7 @@ export class CheTaskRunner {
             },
             cmd: ['sh', '-c', "'" + taskConfig.command + "'"],
             tty: true,
-            cwd: target.workingDir
+            cwd: target.workdir
         };
 
         try {
