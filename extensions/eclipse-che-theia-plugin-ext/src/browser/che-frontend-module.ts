@@ -8,18 +8,25 @@
  * SPDX-License-Identifier: EPL-2.0
  **********************************************************************/
 
+import '../../src/browser/style/che-plugins.css';
+
 import { ContainerModule } from 'inversify';
 import { MainPluginApiProvider } from '@theia/plugin-ext/lib/common/plugin-ext-api-contribution';
 import { CheApiProvider } from './che-api-provider';
 import {
     CHE_API_SERVICE_PATH,
     CHE_TASK_SERVICE_PATH,
+    CHE_PLUGIN_SERVICE_PATH,
     CheApiService,
     CheTaskClient,
-    CheTaskService
+    CheTaskService,
+    ChePluginService
 } from '../common/che-protocol';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
+// import { FrontendApplicationContribution, FrontendApplication, WidgetFactory,  } from '@theia/core/lib/browser';
 import { CheTaskClientImpl } from './che-task-client';
+import { ChePluginViewContribution } from './plugin/che-plugin-view-contribution';
+import { ChePluginWidget } from './plugin/che-plugin-widget';
 
 export default new ContainerModule(bind => {
     bind(CheApiProvider).toSelf().inSingletonScope();
@@ -36,4 +43,18 @@ export default new ContainerModule(bind => {
         const client: CheTaskClient = ctx.container.get(CheTaskClient);
         return provider.createProxy<CheTaskService>(CHE_TASK_SERVICE_PATH, client);
     }).inSingletonScope();
+
+    bind(ChePluginService).toDynamicValue(ctx => {
+        const provider = ctx.container.get(WebSocketConnectionProvider);
+        return provider.createProxy<CheApiService>(CHE_PLUGIN_SERVICE_PATH);
+    }).inSingletonScope();
+
+    bindViewContribution(bind, ChePluginViewContribution);
+
+    bind(ChePluginWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(ctx => ({
+        id: ChePluginViewContribution.PLUGINS_WIDGET_ID,
+        createWidget: () => ctx.container.get(ChePluginWidget)
+    }));
+
 });

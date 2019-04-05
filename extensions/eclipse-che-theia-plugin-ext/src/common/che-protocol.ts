@@ -411,3 +411,35 @@ export interface CheTaskClient {
     setRunTaskHandler(func: (id: number, config: che.TaskConfiguration, ctx?: string) => Promise<void>): void;
     onKillEvent: Event<number>
 }
+
+export interface ChePluginMetadata {
+    id: string,
+    type: string,
+    name: string,
+    version: string,
+    description: string,
+    publisher: string,
+    icon: string,
+
+    // url: string,
+    // repository: string,
+    // category: string,
+    // firstPublicationDate: string,
+    // latestUpdateDate: string,
+    // attributes: {
+    //     containerImage: string,
+    //     [attribute: string]: string
+    // }
+}
+
+export const CHE_PLUGIN_SERVICE_PATH = '/che-plugin-service';
+
+export const ChePluginService = Symbol('ChePluginService');
+
+export interface ChePluginService {
+
+    getPlugins(): Promise<ChePluginMetadata[]>;
+
+    getPluginIcon(iconURL: string): Promise<string | undefined>;
+
+}

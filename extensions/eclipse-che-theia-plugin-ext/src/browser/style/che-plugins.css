@@ -1,0 +1,226 @@
+/********************************************************************************
+ * Copyright (C) 2018 Red Hat, Inc. and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.che-plugin-list {
+    width: 100%;
+    box-sizing: border-box;
+    overflow-y: auto;
+    min-width: 250px !important;
+    background-color: cadetblue;
+}
+
+.che-plugin-list .che-plugin {
+    border-bottom: 1px solid;
+    position: relative;
+    height: 104px;
+    display: block;
+}
+
+.che-plugin-list .che-plugin-installed {
+    background: red;
+}
+
+.che-plugin-list .che-plugin:hover {
+    background: var(--theia-layout-color2);
+}
+
+.che-plugin-list .che-plugin-icon {
+    position: absolute;
+    display: block;
+    overflow: hidden;
+    background-color: yellow;
+    width: 64px;
+    height: 64px;
+    left: 10px;
+    top: 16px;
+}
+
+.che-plugin-list .che-plugin-icon > img {
+    width: 64px;
+    height: 64px;
+}
+
+.che-plugin-list .che-plugin-info {
+    position: absolute;
+    display: block;
+    overflow: hidden;
+    background-color: #7d7d7d;
+    height: calc(100% - 16px);
+    left: 84px;
+    top: 8px;
+    right: 2px;
+}
+
+.che-plugin-list .che-plugin-title {
+    height: 24px;
+    line-height: 24px;
+
+    background-color: #305a5a;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+
+    right: 4px;
+}
+
+.che-plugin-list .che-plugin-installed .che-plugin-title {
+    right: 72px;
+}
+
+.che-plugin-list .che-plugin-name {
+    font-size: var(--theia-ui-font-size1);
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    right: 60px;
+    background-color: tomato;
+    height: 100%;
+    color: var(--theia-ui-font-color2);
+    font-weight: bold;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.che-plugin-list .che-plugin-version {
+    background-color: blue;
+
+    font-size: var(--theia-ui-font-size1);
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: 55px;
+    height: 100%;
+    text-align: right;
+    color: var(--theia-ui-font-color3);
+
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.che-plugin-list .che-plugin-description {
+    background-color: #58534b;
+    
+    position: absolute;
+    left: 8px;
+    top: 27px;
+    right: 4px;
+    height: 38px;
+    font-size: var(--theia-ui-font-size0);
+    color: var(--theia-ui-font-color1);
+
+    display: block;
+    overflow: hidden;
+}
+
+.che-plugin-list .che-plugin-description > div {
+    display: table;
+    position: relative;
+    height: 100%;
+}
+
+.che-plugin-list .che-plugin-description > div > div {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.che-plugin-list .che-plugin-publisher {
+    background-color: greenyellow;
+
+    position: absolute;
+    color: var(--theia-ui-font-color2);
+    font-size: var(--theia-ui-font-size0);
+    font-weight: bold;
+    left: 0px;
+    top: 67px;
+    height: 20px;
+    line-height: 20px;
+    right: 72px;
+}
+
+.che-plugin-list .che-plugin-installed .che-plugin-publisher {
+    right: 4px;
+}
+
+
+.che-plugin-list .che-plugin-state {
+    display: none;
+
+    position: absolute;
+    font-size: var(--theia-ui-font-size1);
+    text-align: center;
+    cursor: pointer;
+
+    right: 4px;
+    top: 3px;
+    width: 60px;
+    height: 18px;
+    line-height: 18px;
+    
+    /* background-color: #337701; */
+    /* color: var(--theia-ui-font-color0); */
+
+    color: var(--theia-success-font-color0);
+    background-color: var(--theia-success-color0);
+}
+
+.che-plugin-list .che-plugin-installed .che-plugin-state {
+    display: block;
+}
+
+.che-plugin-list .che-plugin-add {
+    display: block;
+
+    position: absolute;
+
+    /* background-color: #307434; */
+    /* background-color: #e6ae44; */
+    
+    /* color: var(--theia-ui-font-color1); */
+    font-size: var(--theia-ui-font-size1);
+
+    color: var(--theia-ui-button-font-color);
+    background-color: var(--theia-ui-button-color);
+
+    transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+
+    top: 66px;
+    height: 22px;
+    line-height: 22px;
+    right: 4px;
+    width: 60px;
+    text-align: center;
+
+    cursor: pointer;
+}
+
+.che-plugin-list .che-plugin-add:hover {
+    background-color: var(--theia-ui-button-color-hover);
+}
+
+.che-plugin-list .che-plugin-add:focus {
+    box-shadow: 0px 0px 1px 1px var(--theia-accent-color3);
+    outline: none;
+}
+
+.che-plugin-list .che-plugin-installed .che-plugin-add {
+    display: none;
+}
+
+.che-plugins-tab-icon::before {
+    content: "\F14A";
+}
