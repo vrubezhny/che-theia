@@ -44,7 +44,7 @@ export class ChePluginWidget extends ReactWidget {
         this.title.closable = true;
         this.addClass('theia-plugins');
 
-        this.node.tabIndex = -1;
+        this.node.tabIndex = 0;
     }
 
     protected onAfterShow(msg: Message) {
@@ -58,14 +58,11 @@ export class ChePluginWidget extends ReactWidget {
         }
     }
 
-    // protected onActivateRequest(msg: Message) {
-    //     super.onActivateRequest(msg);
+    protected onActivateRequest(msg: Message) {
+        super.onActivateRequest(msg);
 
-    //     console.log('>>>>>>>>>>>>>>>>> ON ACTIVATE !!!!');
-
-    //     // this.fetchPlugins();
-    //     this.node.focus();
-    // }
+        this.node.focus();
+    }
 
     protected async updatePlugins(): Promise<void> {
         this.plugins = await this.chePluginService.getPlugins();

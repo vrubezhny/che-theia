@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  **********************************************************************/
-import { ChePluginService, ChePluginMetadata } from '../common/che-protocol';
+import { ChePluginService, ChePluginMetadata, WorkspaceSettings } from '../common/che-protocol';
 import { injectable, interfaces } from 'inversify';
 import axios, { AxiosInstance } from 'axios';
 import { CheApiService } from '../common/che-protocol';
@@ -33,24 +33,32 @@ export class ChePluginServiceImpl implements ChePluginService {
 
     private cheApiService: CheApiService;
 
-    //                            https://che-plugin-registry.openshift.io"
-    // private baseURL: string = 'https://che-plugin-registry.openshift.io/';
-
-    // private pluginsURL: string = 'plugins/';
+    private pluginRegistryUrl: string | undefined;
 
     constructor(container: interfaces.Container) {
-        console.log('> CREATING CHE PLUGIN SERVICE IMPL');
-
         this.cheApiService = container.get(CheApiService);
-        console.log('>> CHE API SERVICE: ', this.cheApiService);
+
+        this.pluginRegistryUrl = 'https://che-plugin-registry.openshift.io';
     }
 
-    private async getBaseURL(): Promise<string> {
-        if (!this.cheApiService) {
-            console.log('>> CHE API SERVICE IS SETTTTTTTTTTTTTTTTTTT!!!!!');
+    private async getBaseURL(): Promise<string | undefined> {
+        if (this.pluginRegistryUrl) {
+            return this.pluginRegistryUrl;
         }
 
-        return 'https://che-plugin-registry.openshift.io';
+        if (this.cheApiService) {
+            try {
+                const workpsaceSettings: WorkspaceSettings = await this.cheApiService.getWorkspaceSettings();
+                if (workpsaceSettings && workpsaceSettings['cheWorkspacePluginRegistryUrl']) {
+                    this.pluginRegistryUrl = workpsaceSettings['cheWorkspacePluginRegistryUrl'];
+                    return this.pluginRegistryUrl;
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        return undefined;
     }
 
     async getPlugins(): Promise<ChePluginMetadata[]> {
@@ -69,14 +77,16 @@ export class ChePluginServiceImpl implements ChePluginService {
      */
     private async getPluginsFromMarketplace(): Promise<ChePluginMetadataInternal[]> {
         const baseURL = await this.getBaseURL();
-        const getPluginsRequest = await this.axiosInstance.request<ChePluginMetadataInternal[]>({
-            method: 'GET',
-            baseURL: baseURL,
-            url: '/plugins/'
-        });
+        if (baseURL) {
+            const getPluginsRequest = await this.axiosInstance.request<ChePluginMetadataInternal[]>({
+                method: 'GET',
+                baseURL: baseURL,
+                url: '/plugins/'
+            });
 
-        if (getPluginsRequest.status === 200) {
-            return getPluginsRequest.data;
+            if (getPluginsRequest.status === 200) {
+                return getPluginsRequest.data;
+            }
         }
 
         return [];
@@ -86,9 +96,9 @@ export class ChePluginServiceImpl implements ChePluginService {
      * Loads plugin metadata
      */
     private async getChePluginMetadata(pluginYamlURL: string): Promise<ChePluginMetadata | undefined> {
-        if (pluginYamlURL) {
+        const baseURL = await this.getBaseURL();
+        if (pluginYamlURL && baseURL) {
             try {
-                const baseURL = await this.getBaseURL();
                 const request = await this.axiosInstance.request<ChePluginMetadata[]>({
                     method: 'GET',
                     baseURL: baseURL,
@@ -111,18 +121,6 @@ export class ChePluginServiceImpl implements ChePluginService {
             } catch (error) {
                 console.log(error);
             }
-        }
-
-        return undefined;
-    }
-
-    /**
-     * Loads content of plugin icon
-     */
-    async getPluginIcon(iconURL: string): Promise<string | undefined> {
-        const iconContent = await this.axiosInstance.get<string>(iconURL);
-        if (iconContent.status === 200) {
-            return iconContent.data;
         }
 
         return undefined;

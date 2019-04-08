@@ -343,6 +343,10 @@ export interface Preferences {
     [key: string]: string;
 }
 
+export interface WorkspaceSettings {
+    [key: string]: string;
+}
+
 export const PLUGIN_RPC_CONTEXT = {
     CHE_WORKSPACE: <ProxyIdentifier<CheWorkspace>>createProxyIdentifier<CheWorkspace>('CheWorkspace'),
     CHE_WORKSPACE_MAIN: <ProxyIdentifier<CheWorkspaceMain>>createProxyIdentifier<CheWorkspaceMain>('CheWorkspaceMain'),
@@ -385,6 +389,7 @@ export interface CheApiService {
     replaceUserPreferences(preferences: Preferences): Promise<Preferences>;
     deleteUserPreferences(): Promise<void>;
     deleteUserPreferences(list: string[] | undefined): Promise<void>;
+    getWorkspaceSettings(): Promise<WorkspaceSettings>;
 
     generateSshKey(service: string, name: string): Promise<cheApi.ssh.SshPair>;
     createSshKey(sshKeyPair: cheApi.ssh.SshPair): Promise<void>;
@@ -439,7 +444,5 @@ export const ChePluginService = Symbol('ChePluginService');
 export interface ChePluginService {
 
     getPlugins(): Promise<ChePluginMetadata[]>;
-
-    getPluginIcon(iconURL: string): Promise<string | undefined>;
 
 }
