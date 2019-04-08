@@ -10,8 +10,8 @@
 import { ChePluginService, ChePluginMetadata } from '../common/che-protocol';
 import { injectable, interfaces } from 'inversify';
 import axios, { AxiosInstance } from 'axios';
+import { CheApiService } from '../common/che-protocol';
 
-// const { yaml } = require('js-yaml');
 const yaml = require('js-yaml');
 
 export interface ChePluginMetadataInternal {
@@ -31,6 +31,8 @@ export class ChePluginServiceImpl implements ChePluginService {
 
     private axiosInstance: AxiosInstance = axios;
 
+    private cheApiService: CheApiService;
+
     //                            https://che-plugin-registry.openshift.io"
     // private baseURL: string = 'https://che-plugin-registry.openshift.io/';
 
@@ -38,9 +40,16 @@ export class ChePluginServiceImpl implements ChePluginService {
 
     constructor(container: interfaces.Container) {
         console.log('> CREATING CHE PLUGIN SERVICE IMPL');
+
+        this.cheApiService = container.get(CheApiService);
+        console.log('>> CHE API SERVICE: ', this.cheApiService);
     }
 
     private async getBaseURL(): Promise<string> {
+        if (!this.cheApiService) {
+            console.log('>> CHE API SERVICE IS SETTTTTTTTTTTTTTTTTTT!!!!!');
+        }
+
         return 'https://che-plugin-registry.openshift.io';
     }
 
@@ -59,9 +68,10 @@ export class ChePluginServiceImpl implements ChePluginService {
      * Loads list of plugins from the marketplace
      */
     private async getPluginsFromMarketplace(): Promise<ChePluginMetadataInternal[]> {
+        const baseURL = await this.getBaseURL();
         const getPluginsRequest = await this.axiosInstance.request<ChePluginMetadataInternal[]>({
             method: 'GET',
-            baseURL: await this.getBaseURL(),
+            baseURL: baseURL,
             url: '/plugins/'
         });
 
@@ -78,9 +88,10 @@ export class ChePluginServiceImpl implements ChePluginService {
     private async getChePluginMetadata(pluginYamlURL: string): Promise<ChePluginMetadata | undefined> {
         if (pluginYamlURL) {
             try {
+                const baseURL = await this.getBaseURL();
                 const request = await this.axiosInstance.request<ChePluginMetadata[]>({
                     method: 'GET',
-                    baseURL: await this.getBaseURL(),
+                    baseURL: baseURL,
                     url: pluginYamlURL
                 });
 
