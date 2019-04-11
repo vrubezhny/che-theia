@@ -66,28 +66,29 @@
 
 .che-plugin-list .che-plugin-title {
     /* background-color: #305a5a; */
-    height: 24px;
-    line-height: 24px;
+    height: 22px;
+    line-height: 22px;
     position: absolute;
     left: 0px;
-    top: 0px;
+    top: 3px;
     right: 4px;
 }
 
-.che-plugin-list .che-plugin-installed .che-plugin-title {
+/* .che-plugin-list .che-plugin-installed .che-plugin-title {
     right: 72px;
-}
+} */
 
 .che-plugin-list .che-plugin-name {
     /* background-color: tomato; */
-    font-size: var(--theia-ui-font-size1);
+    /* font-size: var(--theia-ui-font-size1); */
+    font-size: var(--theia-ui-font-size0);
+    font-weight: bold;
+    color: var(--theia-ui-font-color2);
     position: absolute;
     left: 0px;
     top: 0px;
     right: 60px;
     height: 100%;
-    color: var(--theia-ui-font-color2);
-    font-weight: bold;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -95,14 +96,16 @@
 
 .che-plugin-list .che-plugin-version {
     /* background-color: blue; */
-    font-size: var(--theia-ui-font-size1);
+    /* font-size: var(--theia-ui-font-size1); */
+    font-size: var(--theia-ui-font-size0);
+    /* font-weight: bold; */
+    color: var(--theia-ui-font-color2);
     position: absolute;
     right: 0px;
     top: 0px;
     width: 55px;
     height: 100%;
     text-align: right;
-    color: var(--theia-ui-font-color2);
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -111,8 +114,8 @@
 .che-plugin-list .che-plugin-description {
     /* background-color: #58534b; */
     position: absolute;
-    left: 8px;
-    top: 27px;
+    left: 0px;
+    top: 26px;
     right: 4px;
     height: 38px;
     font-size: var(--theia-ui-font-size0);
@@ -139,17 +142,17 @@
     font-size: var(--theia-ui-font-size0);
     font-weight: bold;
     left: 0px;
-    top: 67px;
+    top: 65px;
     height: 20px;
     line-height: 20px;
-    right: 72px;
+    right: 80px;
 }
 
-.che-plugin-list .che-plugin-installed .che-plugin-publisher {
+/* .che-plugin-list .che-plugin-installed .che-plugin-publisher {
     right: 4px;
-}
+} */
 
-.che-plugin-list .che-plugin-state {
+/* .che-plugin-list .che-plugin-state {
     display: none;
     position: absolute;
     font-size: var(--theia-ui-font-size1);
@@ -166,9 +169,9 @@
 
 .che-plugin-list .che-plugin-installed .che-plugin-state {
     display: block;
-}
+} */
 
-.che-plugin-list .che-plugin-add {
+/* .che-plugin-list .che-plugin-add {
     display: block;
     position: absolute;
     font-size: var(--theia-ui-font-size1);
@@ -183,19 +186,73 @@
     text-align: center;
     cursor: pointer;
     user-select: none;
+} */
+
+/* .che-plugin-list .che-plugin-add:hover {
+    background-color: var(--theia-ui-button-color-hover);
+} */
+
+/* .che-plugin-list .che-plugin-add:focus {
+    box-shadow: 0px 0px 1px 1px var(--theia-accent-color3);
+    outline: none;
+} */
+
+/* .che-plugin-list .che-plugin-installed .che-plugin-add {
+    display: none;
+} */
+
+.che-plugin-list .che-plugin-action-add,
+.che-plugin-list .che-plugin-action-remove {
+    display: block;
+    position: absolute;
+    /* font-size: var(--theia-ui-font-size1); */
+    font-size: var(--theia-ui-font-size0);
+    font-weight: bold;
+    transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+    top: 66px;
+    height: 22px;
+    line-height: 22px;
+    right: 4px;
+    width: 70px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+
+    /* color: var(--theia-ui-button-font-color);
+    background-color: var(--theia-ui-button-color); */
 }
 
-.che-plugin-list .che-plugin-add:hover {
+.che-plugin-list .che-plugin-action-add {
+    color: var(--theia-ui-button-font-color);
+    background-color: var(--theia-ui-button-color);
+}
+
+.che-plugin-list .che-plugin-action-add:hover {
     background-color: var(--theia-ui-button-color-hover);
 }
 
-.che-plugin-list .che-plugin-add:focus {
-    box-shadow: 0px 0px 1px 1px var(--theia-accent-color3);
+.che-plugin-list .che-plugin-action-add:active {
+    /* box-shadow: 0px 0px 1px 1px var(--theia-accent-color3); */
+    box-shadow: 0px 0px 1px 1px var(--theia-ui-button-color-hover);
     outline: none;
 }
 
-.che-plugin-list .che-plugin-installed .che-plugin-add {
-    display: none;
+.che-plugin-list .che-plugin-action-remove {
+    color: var(--theia-success-font-color0);
+    background-color: var(--theia-success-color0);
+}
+
+.che-plugin-list .che-plugin-action-remove:hover {
+    /* color: var(--theia-success-font-color0); */
+    background-color: var(--theia-success-color1);
+}
+
+.che-plugin-list .che-plugin-action-remove:active {
+    /* box-shadow: 0px 0px 1px 1px var(--theia-accent-color3); */
+    box-shadow: 0px 0px 1px 1px var(--theia-success-color0);
+    outline: none;
+    /* color: var(--theia-success-font-color0);
+    background-color: var(--theia-success-color0); */
 }
 
 .che-plugins-tab-icon::before {

@@ -122,16 +122,33 @@ export class ChePluginWidget extends ReactWidget {
                     <div className='che-plugin-name'>{plugin.name}</div>
                     <div className='che-plugin-version'>{plugin.version}</div>
                 </div>
-                <div className='che-plugin-state'>Installed</div>
                 <div className='che-plugin-description'>
                     <div>
                         <div>{plugin.description}</div>
                     </div>
                 </div>
                 <div className='che-plugin-publisher'>{plugin.publisher}</div>
-                <div className='che-plugin-add'>Install</div>
+                {this.renderPluginAction(plugin)}
             </div>
         </div>;
+    }
+
+    protected renderPluginAction(plugin: ChePluginMetadata): React.ReactNode {
+        if (this.isPluginInstalled(plugin)) {
+            return <div className='che-plugin-action-remove'>Installed</div>;
+        } else {
+            return <div className='che-plugin-action-add'>Install</div>;
+        }
+    }
+
+    protected installPlugin = async () => {
+        console.log('> INSTALL plugin...');
+        // // await this.sleep(10000);
+        // await this.fetchPlugins();
+    }
+
+    protected uninstallPlugin = async () => {
+        console.log('> UNINSTALL plugin...');
     }
 
     protected pluginClassName(plugin: ChePluginMetadata): string {
