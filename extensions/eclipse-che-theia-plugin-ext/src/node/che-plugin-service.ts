@@ -126,4 +126,14 @@ export class ChePluginServiceImpl implements ChePluginService {
         return undefined;
     }
 
+    async getInstalledPlugins(): Promise<string[]> {
+        const installedPlugins: string[] = [
+            'org.eclipse.che.editor.theia:1.0.0',
+            'che-machine-exec-plugin:0.0.1',
+            'che-dummy-plugin:0.0.1'
+        ];
+
+        return installedPlugins;
+    }
+
 }

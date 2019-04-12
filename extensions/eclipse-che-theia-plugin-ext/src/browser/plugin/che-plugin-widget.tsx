@@ -22,8 +22,16 @@ import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import * as React from 'react';
 import { ChePluginMetadata, ChePluginService } from '../../common/che-protocol';
 
+export interface PluginVirtualService {
+
+    isPluginInstalled(plugin: ChePluginMetadata): boolean;
+
+}
+
 @injectable()
-export class ChePluginWidget extends ReactWidget {
+export class ChePluginWidget extends ReactWidget implements PluginVirtualService {
+
+    private installedPlugins: string[] = [];
 
     protected plugins: ChePluginMetadata[] = [];
 
@@ -65,6 +73,11 @@ export class ChePluginWidget extends ReactWidget {
     }
 
     protected async updatePlugins(): Promise<void> {
+        this.installedPlugins = await this.chePluginService.getInstalledPlugins();
+        console.log('-------------------------------------------------------------------------');
+        console.log(this.installedPlugins);
+        console.log('-------------------------------------------------------------------------');
+
         this.plugins = await this.chePluginService.getPlugins();
 
         this.ready = true;
@@ -76,6 +89,7 @@ export class ChePluginWidget extends ReactWidget {
             if (!this.plugins.length) {
                 return <AlertMessage type='INFO' header='No plugins currently available.' />;
             }
+
             return <React.Fragment>
                 {this.renderPluginList()}
             </React.Fragment>;
@@ -86,34 +100,46 @@ export class ChePluginWidget extends ReactWidget {
         }
     }
 
-    // protected renderUpdateButton(): React.ReactNode {
-    //     return <button onClick={this.updatePlugins}>UPDATE</button>;
-    // }
-
-    // protected updatePlugins = async () => {
-    //     console.log('> UPDATE plugins...');
-
-    //     this.ready = false;
-    //     this.update();
-
-    //     // await this.sleep(10000);
-    //     await this.fetchPlugins();
-    // }
-
     protected renderPluginList(): React.ReactNode {
-        const theList: React.ReactNode[] = [];
-        this.plugins.forEach(plugin => {
-            const container = this.renderPlugin(plugin);
-            theList.push(container);
-        });
+        const instance = this;
+
+        const list = this.plugins.map(plugin =>
+            <ChePlugin key={plugin.id + ':' + plugin.version} plugin={plugin} service={instance}></ChePlugin>);
 
         return <div className='che-plugin-list'>
-            {theList}
+            {list}
         </div>;
     }
 
-    private renderPlugin(plugin: ChePluginMetadata) {
-        return <div key={plugin.id} className={this.pluginClassName(plugin)}>
+    isPluginInstalled(plugin: ChePluginMetadata): boolean {
+        const key = plugin.id + ':' + plugin.version;
+        const index = this.installedPlugins.indexOf(key);
+        return index >= 0;
+    }
+
+}
+
+export class ChePlugin extends React.Component<ChePlugin.Props, ChePlugin.State> {
+
+    constructor(props: ChePlugin.Props) {
+        super(props);
+
+        const plugin = props.plugin;
+        const state = props.service.isPluginInstalled(plugin) ? 'installed' : 'not_installed';
+
+        this.state = {
+            pluginState: state
+        };
+    }
+
+    id(): string {
+        return this.props.plugin.id + ':' + this.props.plugin.version;
+    }
+
+    render(): React.ReactNode {
+        const plugin = this.props.plugin;
+
+        return <div key={plugin.id} className='che-plugin'>
             <div className='che-plugin-icon'>
                 <img src={plugin.icon}></img>
             </div>
@@ -127,49 +153,56 @@ export class ChePluginWidget extends ReactWidget {
                         <div>{plugin.description}</div>
                     </div>
                 </div>
-                <div className='che-plugin-publisher'>{plugin.publisher}</div>
+                <div className='che-plugin-publisher'>
+                    {plugin.publisher}
+                    <span className='che-plugin-type'>{plugin.type}</span>
+                </div>
                 {this.renderPluginAction(plugin)}
             </div>
         </div>;
     }
 
     protected renderPluginAction(plugin: ChePluginMetadata): React.ReactNode {
-        if (this.isPluginInstalled(plugin)) {
-            return <div className='che-plugin-action-remove'>Installed</div>;
-        } else {
-            return <div className='che-plugin-action-add'>Install</div>;
+        if (this.state.pluginState === 'installing' || this.state.pluginState === 'installed') {
+            return <div className='che-plugin-action-remove' onClick={this.uninstallPlugin}>Installed</div>;
         }
+
+        return <div className='che-plugin-action-add' onClick={this.installPlugin}>Install</div>;
     }
 
     protected installPlugin = async () => {
-        console.log('> INSTALL plugin...');
-        // // await this.sleep(10000);
-        // await this.fetchPlugins();
+        console.log('> INSTALL plugin ' + this.id());
+
+        this.setState({
+            pluginState: 'installing'
+        });
     }
 
     protected uninstallPlugin = async () => {
-        console.log('> UNINSTALL plugin...');
+        console.log('> UNINSTALL plugin ' + this.id());
+
+        this.setState({
+            pluginState: 'uninstalling'
+        });
     }
 
-    protected pluginClassName(plugin: ChePluginMetadata): string {
-        const classNames = ['che-plugin'];
+}
 
-        if (this.isPluginInstalled(plugin)) {
-            classNames.push('che-plugin-installed');
-        }
+export type ChePluginState =
+    'not_installed'
+    | 'installed'
+    | 'installing'
+    | 'uninstalling';
 
-        return classNames.join(' ');
+export namespace ChePlugin {
+
+    export interface Props {
+        service: PluginVirtualService;
+        plugin: ChePluginMetadata;
     }
 
-    private installedPlugins: string[] = [
-        'org.eclipse.che.editor.theia:1.0.0',
-        'che-machine-exec-plugin:0.0.1'
-    ];
-
-    protected isPluginInstalled(plugin: ChePluginMetadata): boolean {
-        const key = plugin.id + ':' + plugin.version;
-        const index = this.installedPlugins.indexOf(key);
-        return index >= 0;
+    export interface State {
+        pluginState: ChePluginState;
     }
 
 }

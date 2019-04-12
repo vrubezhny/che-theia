@@ -445,4 +445,6 @@ export interface ChePluginService {
 
     getPlugins(): Promise<ChePluginMetadata[]>;
 
+    getInstalledPlugins(): Promise<string[]>;
+
 }
