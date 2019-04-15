@@ -7,10 +7,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  **********************************************************************/
-import { ChePluginService, ChePluginMetadata, WorkspaceSettings } from '../common/che-protocol';
+import { CheApiService, ChePluginService, ChePluginMetadata, WorkspaceSettings } from '../common/che-protocol';
 import { injectable, interfaces } from 'inversify';
 import axios, { AxiosInstance } from 'axios';
-import { CheApiService } from '../common/che-protocol';
 
 const yaml = require('js-yaml');
 
@@ -108,6 +107,8 @@ export class ChePluginServiceImpl implements ChePluginService {
                 if (request.status === 200) {
                     const props: ChePluginMetadata = yaml.safeLoad(request.data);
 
+                    const disabled: boolean = props.type === 'Che Editor';
+
                     return {
                         id: props.id,
                         type: props.type,
@@ -115,7 +116,8 @@ export class ChePluginServiceImpl implements ChePluginService {
                         version: props.version,
                         description: props.description,
                         publisher: props.publisher,
-                        icon: props.icon
+                        icon: props.icon,
+                        disabled: disabled
                     };
                 }
             } catch (error) {

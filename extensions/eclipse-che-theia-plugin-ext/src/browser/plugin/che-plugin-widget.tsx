@@ -21,10 +21,11 @@ import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import * as React from 'react';
 import { ChePluginMetadata, ChePluginService } from '../../common/che-protocol';
+import { HostedPluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 
 export interface PluginVirtualService {
 
-    isPluginInstalled(plugin: ChePluginMetadata): boolean;
+     isPluginInstalled(plugin: ChePluginMetadata): boolean;
 
 }
 
@@ -42,7 +43,8 @@ export class ChePluginWidget extends ReactWidget implements PluginVirtualService
     protected needToBeRendered = true;
 
     constructor(
-        @inject(ChePluginService) protected readonly chePluginService: ChePluginService
+        @inject(ChePluginService) protected readonly chePluginService: ChePluginService,
+        @inject(HostedPluginServer) protected readonly hostedPluginServer: HostedPluginServer,
     ) {
         super();
         this.id = 'che-plugins';
@@ -73,6 +75,9 @@ export class ChePluginWidget extends ReactWidget implements PluginVirtualService
     }
 
     protected async updatePlugins(): Promise<void> {
+        const metadata = await this.hostedPluginServer.getDeployedMetadata();
+        console.log('DEPLOYED METADATA ', metadata);
+
         this.installedPlugins = await this.chePluginService.getInstalledPlugins();
         console.log('-------------------------------------------------------------------------');
         console.log(this.installedPlugins);
@@ -140,29 +145,35 @@ export class ChePlugin extends React.Component<ChePlugin.Props, ChePlugin.State>
         const plugin = this.props.plugin;
 
         return <div key={plugin.id} className='che-plugin'>
-            <div className='che-plugin-icon'>
-                <img src={plugin.icon}></img>
-            </div>
-            <div className='che-plugin-info'>
-                <div className='che-plugin-title'>
-                    <div className='che-plugin-name'>{plugin.name}</div>
-                    <div className='che-plugin-version'>{plugin.version}</div>
+            <div className='che-plugin-content'>
+                <div className='che-plugin-icon'>
+                    <img src={plugin.icon}></img>
                 </div>
-                <div className='che-plugin-description'>
-                    <div>
-                        <div>{plugin.description}</div>
+                <div className='che-plugin-info'>
+                    <div className='che-plugin-title'>
+                        <div className='che-plugin-name'>{plugin.name}</div>
+                        <div className='che-plugin-version'>{plugin.version}</div>
                     </div>
+                    <div className='che-plugin-description'>
+                        <div>
+                            <div>{plugin.description}</div>
+                        </div>
+                    </div>
+                    <div className='che-plugin-publisher'>
+                        {plugin.publisher}
+                        <span className='che-plugin-type'>{plugin.type}</span>
+                    </div>
+                    {this.renderPluginAction(plugin)}
                 </div>
-                <div className='che-plugin-publisher'>
-                    {plugin.publisher}
-                    <span className='che-plugin-type'>{plugin.type}</span>
-                </div>
-                {this.renderPluginAction(plugin)}
             </div>
         </div>;
     }
 
     protected renderPluginAction(plugin: ChePluginMetadata): React.ReactNode {
+        if (plugin.disabled) {
+            return undefined;
+        }
+
         if (this.state.pluginState === 'installing' || this.state.pluginState === 'installed') {
             return <div className='che-plugin-action-remove' onClick={this.uninstallPlugin}>Installed</div>;
         }

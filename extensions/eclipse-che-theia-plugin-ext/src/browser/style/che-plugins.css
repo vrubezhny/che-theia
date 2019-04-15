@@ -23,7 +23,7 @@
 }
 
 .che-plugin-list .che-plugin {
-    border-bottom: 1px solid;
+    /* border-bottom: 1px solid; */
     position: relative;
     height: 104px;
     display: block;
@@ -32,8 +32,25 @@
 /* .che-plugin-list .che-plugin-installed {
 } */
 
-.che-plugin-list .che-plugin:hover {
+/* .che-plugin-list .che-plugin:hover {
     background: var(--theia-layout-color2);
+} */
+
+.che-plugin-list .che-plugin-content {
+    position: absolute;
+    overflow: hidden;
+    left: 5px;
+    top: 0px;
+    height: 100%;
+    right: 4px;
+    /* background-color: #585552; */
+    border-bottom: 1px solid var(--theia-layout-color4);
+    box-sizing: border-box;
+}
+
+.che-plugin-list .che-plugin-content:hover {
+    background: var(--theia-layout-color2);
+    /* cursor: pointer; */
 }
 
 .che-plugin-list .che-plugin-icon {
@@ -43,7 +60,9 @@
     overflow: hidden;
     width: 64px;
     height: 64px;
-    left: 10px;
+    /* left: 10px; */
+    /* left: 0px; */
+    left: 8px;
     top: 16px;
 }
 
@@ -94,23 +113,6 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-}
-
-.che-plugin-list .che-plugin-type {
-    font-size: var(--theia-ui-font-size0);
-    font-weight: normal;
-    /* background-color: green; */
-    margin-left: 10px;
-    /* border-radius: 3px; */
-    padding-left: 4px;
-    padding-right: 4px;
-    box-sizing: border-box;
-    padding-top: 1px;
-    padding-bottom: 1px;
-    color: var(--theia-ui-font-color1);
-    /* background-color: var(--theia-success-color0); */
-    background-color: #4c4c4c;
-    display: none;
 }
 
 .che-plugin-list .che-plugin-version {
@@ -168,6 +170,27 @@
     height: 20px;
     line-height: 20px;
     right: 80px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.che-plugin-list .che-plugin-type {
+    font-size: var(--theia-ui-font-size0);
+    font-weight: normal;
+    /* background-color: green; */
+    margin-left: 10px;
+    /* border-radius: 3px; */
+    padding-left: 4px;
+    padding-right: 4px;
+    box-sizing: border-box;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    color: var(--theia-ui-font-color1);
+    /* background-color: var(--theia-success-color0); */
+    background-color: #4c4c4c;
+    /* display: none; */
 }
 
 /* .che-plugin-list .che-plugin-installed .che-plugin-publisher {

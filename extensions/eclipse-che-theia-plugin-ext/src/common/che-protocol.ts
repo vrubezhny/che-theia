@@ -426,6 +426,8 @@ export interface ChePluginMetadata {
     publisher: string,
     icon: string,
 
+    disabled: boolean
+
     // url: string,
     // repository: string,
     // category: string,
