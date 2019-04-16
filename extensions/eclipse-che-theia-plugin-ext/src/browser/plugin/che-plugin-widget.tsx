@@ -20,19 +20,11 @@ import { DisposableCollection } from '@theia/core';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import * as React from 'react';
-import { ChePluginMetadata, ChePluginService } from '../../common/che-protocol';
-import { HostedPluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
-
-export interface PluginVirtualService {
-
-     isPluginInstalled(plugin: ChePluginMetadata): boolean;
-
-}
+import { ChePluginMetadata } from '../../common/che-protocol';
+import { ChePluginFrontendService } from './che-plugin-frontend-service';
 
 @injectable()
-export class ChePluginWidget extends ReactWidget implements PluginVirtualService {
-
-    private installedPlugins: string[] = [];
+export class ChePluginWidget extends ReactWidget {
 
     protected plugins: ChePluginMetadata[] = [];
 
@@ -43,8 +35,7 @@ export class ChePluginWidget extends ReactWidget implements PluginVirtualService
     protected needToBeRendered = true;
 
     constructor(
-        @inject(ChePluginService) protected readonly chePluginService: ChePluginService,
-        @inject(HostedPluginServer) protected readonly hostedPluginServer: HostedPluginServer,
+        @inject(ChePluginFrontendService) protected chePluginFrontendService: ChePluginFrontendService
     ) {
         super();
         this.id = 'che-plugins';
@@ -75,15 +66,7 @@ export class ChePluginWidget extends ReactWidget implements PluginVirtualService
     }
 
     protected async updatePlugins(): Promise<void> {
-        const metadata = await this.hostedPluginServer.getDeployedMetadata();
-        console.log('DEPLOYED METADATA ', metadata);
-
-        this.installedPlugins = await this.chePluginService.getInstalledPlugins();
-        console.log('-------------------------------------------------------------------------');
-        console.log(this.installedPlugins);
-        console.log('-------------------------------------------------------------------------');
-
-        this.plugins = await this.chePluginService.getPlugins();
+        this.plugins = await this.chePluginFrontendService.getPlugins();
 
         this.ready = true;
         this.update();
@@ -106,20 +89,14 @@ export class ChePluginWidget extends ReactWidget implements PluginVirtualService
     }
 
     protected renderPluginList(): React.ReactNode {
-        const instance = this;
+        // const pluginService = this.chePluginFrontendService;
 
         const list = this.plugins.map(plugin =>
-            <ChePlugin key={plugin.id + ':' + plugin.version} plugin={plugin} service={instance}></ChePlugin>);
+            <ChePlugin key={plugin.id + ':' + plugin.version} plugin={plugin} pluginService={this.chePluginFrontendService}></ChePlugin>);
 
         return <div className='che-plugin-list'>
             {list}
         </div>;
-    }
-
-    isPluginInstalled(plugin: ChePluginMetadata): boolean {
-        const key = plugin.id + ':' + plugin.version;
-        const index = this.installedPlugins.indexOf(key);
-        return index >= 0;
     }
 
 }
@@ -130,7 +107,7 @@ export class ChePlugin extends React.Component<ChePlugin.Props, ChePlugin.State>
         super(props);
 
         const plugin = props.plugin;
-        const state = props.service.isPluginInstalled(plugin) ? 'installed' : 'not_installed';
+        const state = props.pluginService.isPluginInstalled(plugin) ? 'installed' : 'not_installed';
 
         this.state = {
             pluginState: state
@@ -174,27 +151,59 @@ export class ChePlugin extends React.Component<ChePlugin.Props, ChePlugin.State>
             return undefined;
         }
 
-        if (this.state.pluginState === 'installing' || this.state.pluginState === 'installed') {
-            return <div className='che-plugin-action-remove' onClick={this.uninstallPlugin}>Installed</div>;
+        switch (this.state.pluginState) {
+            case 'installed':
+                return <div className='che-plugin-action-remove' onClick={this.removePlugin}>Installed</div>;
+            case 'installing':
+                return <div className='che-plugin-action-installing'>Installing...</div>;
+            case 'removing':
+                return <div className='che-plugin-action-removing'>Removing...</div>;
         }
 
+        // 'not_installed'
         return <div className='che-plugin-action-add' onClick={this.installPlugin}>Install</div>;
     }
 
-    protected installPlugin = async () => {
-        console.log('> INSTALL plugin ' + this.id());
-
+    protected set(state: ChePluginState): void {
         this.setState({
-            pluginState: 'installing'
+            pluginState: state
         });
     }
 
-    protected uninstallPlugin = async () => {
-        console.log('> UNINSTALL plugin ' + this.id());
+    protected installPlugin = async () => {
+        const previousState = this.state.pluginState;
+        this.set('installing');
 
-        this.setState({
-            pluginState: 'uninstalling'
-        });
+        try {
+            const success = await this.props.pluginService.install(this.id());
+            if (success) {
+                this.set('installed');
+            } else {
+                console.log('>> CASE 1');
+                this.set(previousState);
+            }
+        } catch (error) {
+            console.log('>> CASE 2');
+            this.set(previousState);
+        }
+    }
+
+    protected removePlugin = async () => {
+        const previousState = this.state.pluginState;
+        this.set('removing');
+
+        try {
+            const success = await this.props.pluginService.remove(this.id());
+            if (success) {
+                this.set('not_installed');
+            } else {
+                console.log('>> CASE 1');
+                this.set(previousState);
+            }
+        } catch (error) {
+            console.log('>> CASE 2');
+            this.set(previousState);
+        }
     }
 
 }
@@ -203,12 +212,12 @@ export type ChePluginState =
     'not_installed'
     | 'installed'
     | 'installing'
-    | 'uninstalling';
+    | 'removing';
 
 export namespace ChePlugin {
 
     export interface Props {
-        service: PluginVirtualService;
+        pluginService: ChePluginFrontendService;
         plugin: ChePluginMetadata;
     }
 

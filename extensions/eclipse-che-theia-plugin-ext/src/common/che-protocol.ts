@@ -445,8 +445,24 @@ export const ChePluginService = Symbol('ChePluginService');
 
 export interface ChePluginService {
 
+    /**
+     * Returns a list of available plugins.
+     */
     getPlugins(): Promise<ChePluginMetadata[]>;
 
-    getInstalledPlugins(): Promise<string[]>;
+    /**
+     * Returns list of plugins described in workspace configuration.
+     */
+    getWorkspacePlugins(): Promise<string[]>;
+
+    /**
+     * Adds a plugin to workspace configuration.
+     */
+    addPlugin(plugin: string): Promise<void>;
+
+    /**
+     * Removes a plugin from workspace configuration.
+     */
+    removePlugin(plugin: string): Promise<void>;
 
 }

@@ -27,6 +27,7 @@ import { WebSocketConnectionProvider, bindViewContribution, WidgetFactory } from
 import { CheTaskClientImpl } from './che-task-client';
 import { ChePluginViewContribution } from './plugin/che-plugin-view-contribution';
 import { ChePluginWidget } from './plugin/che-plugin-widget';
+import { ChePluginFrontendService } from './plugin/che-plugin-frontend-service';
 
 export default new ContainerModule(bind => {
     bind(CheApiProvider).toSelf().inSingletonScope();
@@ -48,6 +49,8 @@ export default new ContainerModule(bind => {
         const provider = ctx.container.get(WebSocketConnectionProvider);
         return provider.createProxy<CheApiService>(CHE_PLUGIN_SERVICE_PATH);
     }).inSingletonScope();
+
+    bind(ChePluginFrontendService).toSelf().inSingletonScope();
 
     bindViewContribution(bind, ChePluginViewContribution);
 

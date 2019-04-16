@@ -10,6 +10,7 @@
 import { CheApiService, ChePluginService, ChePluginMetadata, WorkspaceSettings } from '../common/che-protocol';
 import { injectable, interfaces } from 'inversify';
 import axios, { AxiosInstance } from 'axios';
+import { che as cheApi } from '@eclipse-che/api';
 
 const yaml = require('js-yaml');
 
@@ -60,6 +61,9 @@ export class ChePluginServiceImpl implements ChePluginService {
         return undefined;
     }
 
+    /**
+     * Returns a list of available plugins.
+     */
     async getPlugins(): Promise<ChePluginMetadata[]> {
         const marketplacePlugins = await this.getPluginsFromMarketplace();
 
@@ -128,14 +132,60 @@ export class ChePluginServiceImpl implements ChePluginService {
         return undefined;
     }
 
-    async getInstalledPlugins(): Promise<string[]> {
-        const installedPlugins: string[] = [
-            'org.eclipse.che.editor.theia:1.0.0',
-            'che-machine-exec-plugin:0.0.1',
-            'che-dummy-plugin:0.0.1'
-        ];
+    /**
+     * Returns list of plugins described in workspace configuration.
+     */
+    async getWorkspacePlugins(): Promise<string[]> {
+        const workspace: cheApi.workspace.Workspace = await this.cheApiService.currentWorkspace();
 
-        return installedPlugins;
+        if (workspace.config && workspace.config.attributes && workspace.config.attributes['plugins']) {
+            const plugins = workspace.config.attributes['plugins'];
+            return plugins.split(',');
+        }
+
+        return Promise.reject('Unable to get Workspace plugins');
+    }
+
+    /**
+     * Sets new list of plugins to workspace configuration.
+     */
+    async setWorkspacePlugins(plugins: string[]): Promise<void> {
+        const workspace: cheApi.workspace.Workspace = await this.cheApiService.currentWorkspace();
+        const workspaceId = workspace.id;
+
+        if (workspace.config && workspace.config.attributes && workspace.config.attributes['plugins']) {
+            workspace.config.attributes['plugins'] = plugins.join(',');
+
+            await this.cheApiService.updateWorkspace(workspaceId, workspace);
+        }
+    }
+
+    /**
+     * Adds a plugin to workspace configuration.
+     */
+    async addPlugin(plugin: string): Promise<void> {
+        try {
+            const plugins: string[] = await this.getWorkspacePlugins();
+            plugins.push(plugin);
+            await this.setWorkspacePlugins(plugins);
+        } catch (error) {
+            console.error(error);
+            return Promise.reject('Unable to install plugin ' + plugin + ' ' + error.message);
+        }
+    }
+
+    /**
+     * Removes a plugin from workspace configuration.
+     */
+    async removePlugin(plugin: string): Promise<void> {
+        try {
+            const plugins: string[] = await this.getWorkspacePlugins();
+            const filteredPlugins = plugins.filter(p => p !== plugin);
+            await this.setWorkspacePlugins(filteredPlugins);
+        } catch (error) {
+            console.error(error);
+            return Promise.reject('Unable to remove plugin ' + plugin + ' ' + error.message);
+        }
     }
 
 }
