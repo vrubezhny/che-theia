@@ -89,8 +89,6 @@ export class ChePluginWidget extends ReactWidget {
     }
 
     protected renderPluginList(): React.ReactNode {
-        // const pluginService = this.chePluginFrontendService;
-
         const list = this.plugins.map(plugin =>
             <ChePlugin key={plugin.id + ':' + plugin.version} plugin={plugin} pluginService={this.chePluginFrontendService}></ChePlugin>);
 
