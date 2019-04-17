@@ -25,9 +25,11 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 @injectable()
 export class ChePluginFrontendService {
 
-    private availablePlugins: ChePluginMetadata[] = [];
-
     private workspacePlugins: string[] = [];
+
+    private defaultPluginRegistryURI: string;
+
+    private availablePlugins: ChePluginMetadata[] = [];
 
     constructor(
         @inject(ChePluginService) protected readonly chePluginService: ChePluginService,
@@ -38,11 +40,19 @@ export class ChePluginFrontendService {
     }
 
     async getPlugins(): Promise<ChePluginMetadata[]> {
+        // get list of deployed plugins from runtime
+        // will be used in the future
         // const metadata = await this.hostedPluginServer.getDeployedMetadata();
 
+        // Get list of plugins from workspace config
         this.workspacePlugins = await this.chePluginService.getWorkspacePlugins();
 
-        this.availablePlugins = await this.chePluginService.getPlugins();
+        this.defaultPluginRegistryURI = await this.chePluginService.getDefaultPluginRegistryURI();
+        console.log('> default plugin registry URI ', this.defaultPluginRegistryURI);
+
+        const activePluginRegistryURI = 'https://raw.githubusercontent.com/vitaliy-guliy/che-theia-plugin-registry/master';
+
+        this.availablePlugins = await this.chePluginService.getPlugins(activePluginRegistryURI);
 
         return this.availablePlugins;
     }

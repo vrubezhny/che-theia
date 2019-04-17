@@ -446,9 +446,17 @@ export const ChePluginService = Symbol('ChePluginService');
 export interface ChePluginService {
 
     /**
-     * Returns a list of available plugins.
+     * Returns URI og default plugin registry;
      */
-    getPlugins(): Promise<ChePluginMetadata[]>;
+    getDefaultPluginRegistryURI(): Promise<string>;
+
+    /**
+     * Returns a list of available plugins on the plugin registry.
+     *
+     * @param registryURI URI to the plugin registry
+     * @return list of available plugins
+     */
+    getPlugins(registryURI: string): Promise<ChePluginMetadata[]>;
 
     /**
      * Returns list of plugins described in workspace configuration.

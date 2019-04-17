@@ -11,6 +11,7 @@ import { CheApiService, ChePluginService, ChePluginMetadata, WorkspaceSettings }
 import { injectable, interfaces } from 'inversify';
 import axios, { AxiosInstance } from 'axios';
 import { che as cheApi } from '@eclipse-che/api';
+import URI from '@theia/core/lib/common/uri';
 
 const yaml = require('js-yaml');
 
@@ -33,104 +34,170 @@ export class ChePluginServiceImpl implements ChePluginService {
 
     private cheApiService: CheApiService;
 
-    private pluginRegistryUrl: string | undefined;
-
     constructor(container: interfaces.Container) {
         this.cheApiService = container.get(CheApiService);
 
-        this.pluginRegistryUrl = 'https://che-plugin-registry.openshift.io';
+        // this.pluginRegistryUrl = 'https://che-plugin-registry.openshift.io';
     }
 
-    private async getBaseURL(): Promise<string | undefined> {
-        if (this.pluginRegistryUrl) {
-            return this.pluginRegistryUrl;
-        }
-
-        if (this.cheApiService) {
-            try {
-                const workpsaceSettings: WorkspaceSettings = await this.cheApiService.getWorkspaceSettings();
-                if (workpsaceSettings && workpsaceSettings['cheWorkspacePluginRegistryUrl']) {
-                    this.pluginRegistryUrl = workpsaceSettings['cheWorkspacePluginRegistryUrl'];
-                    return this.pluginRegistryUrl;
-                }
-            } catch (error) {
-                console.error(error);
+    async getDefaultPluginRegistryURI(): Promise<string> {
+        try {
+            const workpsaceSettings: WorkspaceSettings = await this.cheApiService.getWorkspaceSettings();
+            if (workpsaceSettings && workpsaceSettings['cheWorkspacePluginRegistryUrl']) {
+                const pluginRegistryUrl = workpsaceSettings['cheWorkspacePluginRegistryUrl'];
+                console.log('>>> cheWorkspacePluginRegistryUrl: ' + pluginRegistryUrl);
+                return pluginRegistryUrl;
             }
-        }
 
-        return undefined;
+            return Promise.reject('Plugin registry URI is not set.');
+        } catch (error) {
+            // console.log('ERROR', error);
+            // return Promise.reject('Unable to get default plugin registry URI. ' + error.message);
+
+            // A temporary solution. Should throw an error instead.
+            return 'https://che-plugin-registry.openshift.io';
+        }
     }
 
     /**
-     * Returns a list of available plugins.
+     * Returns a list of available plugins on the plugin registry.
+     *
+     * @param registryURI URI to the plugin registry
+     * @return list of available plugins
      */
-    async getPlugins(): Promise<ChePluginMetadata[]> {
-        const marketplacePlugins = await this.getPluginsFromMarketplace();
+    async getPlugins(registryURI: string): Promise<ChePluginMetadata[]> {
+        const marketplacePlugins = await this.loadPluginList(registryURI);
+        // const marketplacePlugins = await this.getPluginsFromMarketplace();
+        if (!marketplacePlugins) {
+            return Promise.reject('Unable to get plugins from marketplace');
+        }
+
+        console.log('> MARKETPLACE PLUGINS > ', marketplacePlugins);
 
         const plugins: ChePluginMetadata[] = await Promise.all(
-            marketplacePlugins.map(async marketplacePlugin =>
-                await this.getChePluginMetadata(marketplacePlugin.links.self)
+            marketplacePlugins.map(async marketplacePlugin => {
+                const pluginYamlURI = this.getPluginYampURI(registryURI, marketplacePlugin);
+                return await this.loadPluginMetadata(pluginYamlURI);
+            }
             ));
+
+        // console.log('================================================================================');
+        // console.log('> plugins ', plugins);
+        const filteredPlugins = plugins.filter(plugin => plugin !== null && plugin !== undefined);
+        // console.log('================================================================================');
+        return filteredPlugins;
+    }
+
+    /**
+     * Loads list of plugins from plugin registry.
+     *
+     * @param registryURI URI to the plugin registry
+     * @return list of available plugins
+     */
+    private async loadPluginList(registryURI: string): Promise<ChePluginMetadataInternal[] | undefined> {
+        const axiosInstance = this.axiosInstance;
+
+        const load = async function (url: string): Promise<ChePluginMetadataInternal[] | undefined> {
+            try {
+                const noCache = { headers: { 'Cache-Control': 'no-cache' } };
+                return (await axiosInstance.get<ChePluginMetadataInternal[]>(url, noCache)).data;
+            } catch (error) {
+                return undefined;
+            }
+        };
+
+        let plugins = await load(`${registryURI}/plugins/`);
+        if (!plugins) {
+            plugins = await load(`${registryURI}/plugins/plugins.json`);
+        }
 
         return plugins;
     }
 
     /**
-     * Loads list of plugins from the marketplace
+     * Creates an URI to plugin metadata yaml file.
+     *
+     * @param registryURI URI to the plugin registry
+     * @param plugin plugin metadata
+     * @return uri to plugin yaml file
      */
-    private async getPluginsFromMarketplace(): Promise<ChePluginMetadataInternal[]> {
-        const baseURL = await this.getBaseURL();
-        if (baseURL) {
-            const getPluginsRequest = await this.axiosInstance.request<ChePluginMetadataInternal[]>({
-                method: 'GET',
-                baseURL: baseURL,
-                url: '/plugins/'
-            });
-
-            if (getPluginsRequest.status === 200) {
-                return getPluginsRequest.data;
+    private getPluginYampURI(registryURI: string, plugin: ChePluginMetadataInternal): string | undefined {
+        if (plugin.links && plugin.links.self) {
+            const self: string = plugin.links.self;
+            if (self.startsWith('/')) {
+                // /vitaliy-guliy/che-theia-plugin-registry/master/plugins/org.eclipse.che.samples.hello-world-frontend-plugin/0.0.1/meta.yaml
+                const uri = new URI(registryURI);
+                return `${uri.scheme}://${uri.authority}${self}`;
+            } else {
+                // org.eclipse.che.samples.hello-world-frontend-plugin/0.0.1/meta.yaml
+                return `${registryURI}/plugins/${self}`;
             }
-        }
 
-        return [];
+        } else {
+            return `${registryURI}/plugins/${plugin.id}/${plugin.version}/meta.yaml`;
+        }
     }
 
-    /**
-     * Loads plugin metadata
-     */
-    private async getChePluginMetadata(pluginYamlURL: string): Promise<ChePluginMetadata | undefined> {
-        const baseURL = await this.getBaseURL();
-        if (pluginYamlURL && baseURL) {
-            try {
-                const request = await this.axiosInstance.request<ChePluginMetadata[]>({
-                    method: 'GET',
-                    baseURL: baseURL,
-                    url: pluginYamlURL
-                });
+    private async loadPluginMetadata(yamlURI: string): Promise<ChePluginMetadata> {
+        try {
+            const noCache = { headers: { 'Cache-Control': 'no-cache' } };
+            const data = (await this.axiosInstance.get<ChePluginMetadata[]>(yamlURI, noCache)).data;
+            const props: ChePluginMetadata = yaml.safeLoad(data);
 
-                if (request.status === 200) {
-                    const props: ChePluginMetadata = yaml.safeLoad(request.data);
+            const disabled: boolean = props.type === 'Che Editor';
 
-                    const disabled: boolean = props.type === 'Che Editor';
-
-                    return {
-                        id: props.id,
-                        type: props.type,
-                        name: props.name,
-                        version: props.version,
-                        description: props.description,
-                        publisher: props.publisher,
-                        icon: props.icon,
-                        disabled: disabled
-                    };
-                }
-            } catch (error) {
-                console.log(error);
-            }
+            return {
+                id: props.id,
+                type: props.type,
+                name: props.name,
+                version: props.version,
+                description: props.description,
+                publisher: props.publisher,
+                icon: props.icon,
+                disabled: disabled
+            };
+        } catch (error) {
+            console.log(error);
+            return Promise.reject('Unable to load plugin metadata. ' + error.message);
         }
-
-        return undefined;
     }
+
+    // /**
+    //  * Loads plugin metadata
+    //  */
+    // private async getChePluginMetadata(pluginYamlURL: string): Promise<ChePluginMetadata | undefined> {
+    //     const baseURL = await this.getBaseURL();
+    //     if (pluginYamlURL && baseURL) {
+    //         try {
+    //             const request = await this.axiosInstance.request<ChePluginMetadata[]>({
+    //                 method: 'GET',
+    //                 baseURL: baseURL,
+    //                 url: pluginYamlURL
+    //             });
+
+    //             if (request.status === 200) {
+    //                 const props: ChePluginMetadata = yaml.safeLoad(request.data);
+
+    //                 const disabled: boolean = props.type === 'Che Editor';
+
+    //                 return {
+    //                     id: props.id,
+    //                     type: props.type,
+    //                     name: props.name,
+    //                     version: props.version,
+    //                     description: props.description,
+    //                     publisher: props.publisher,
+    //                     icon: props.icon,
+    //                     disabled: disabled
+    //                 };
+    //             }
+    //         } catch (error) {
+    //             console.log(error);
+    //         }
+    //     }
+
+    //     return undefined;
+    // }
 
     /**
      * Returns list of plugins described in workspace configuration.

@@ -68,6 +68,8 @@ export class ChePluginWidget extends ReactWidget {
     protected async updatePlugins(): Promise<void> {
         this.plugins = await this.chePluginFrontendService.getPlugins();
 
+        console.log('CLIENT WIDGET. PLUGINS: ', this.plugins);
+
         this.ready = true;
         this.update();
     }
@@ -172,16 +174,10 @@ export class ChePlugin extends React.Component<ChePlugin.Props, ChePlugin.State>
         const previousState = this.state.pluginState;
         this.set('installing');
 
-        try {
-            const success = await this.props.pluginService.install(this.id());
-            if (success) {
-                this.set('installed');
-            } else {
-                console.log('>> CASE 1');
-                this.set(previousState);
-            }
-        } catch (error) {
-            console.log('>> CASE 2');
+        const installed = await this.props.pluginService.install(this.id());
+        if (installed) {
+            this.set('installed');
+        } else {
             this.set(previousState);
         }
     }
@@ -190,16 +186,10 @@ export class ChePlugin extends React.Component<ChePlugin.Props, ChePlugin.State>
         const previousState = this.state.pluginState;
         this.set('removing');
 
-        try {
-            const success = await this.props.pluginService.remove(this.id());
-            if (success) {
-                this.set('not_installed');
-            } else {
-                console.log('>> CASE 1');
-                this.set(previousState);
-            }
-        } catch (error) {
-            console.log('>> CASE 2');
+        const removed = await this.props.pluginService.remove(this.id());
+        if (removed) {
+            this.set('not_installed');
+        } else {
             this.set(previousState);
         }
     }
