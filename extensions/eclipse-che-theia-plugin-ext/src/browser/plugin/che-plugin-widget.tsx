@@ -20,7 +20,7 @@ import { DisposableCollection } from '@theia/core';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import * as React from 'react';
-import { ChePluginMetadata } from '../../common/che-protocol';
+import { ChePluginRegistry, ChePluginMetadata } from '../../common/che-protocol';
 import { ChePluginFrontendService } from './che-plugin-frontend-service';
 
 @injectable()
@@ -46,6 +46,9 @@ export class ChePluginWidget extends ReactWidget {
         this.addClass('theia-plugins');
 
         this.node.tabIndex = 0;
+
+        chePluginFrontendService.onPluginRegistryChanged(registry => this.updatePlugins(registry));
+
     }
 
     protected onAfterShow(msg: Message) {
@@ -65,7 +68,7 @@ export class ChePluginWidget extends ReactWidget {
         this.node.focus();
     }
 
-    protected async updatePlugins(): Promise<void> {
+    protected async updatePlugins(registry?: ChePluginRegistry): Promise<void> {
         this.plugins = await this.chePluginFrontendService.getPlugins();
 
         console.log('CLIENT WIDGET. PLUGINS: ', this.plugins);

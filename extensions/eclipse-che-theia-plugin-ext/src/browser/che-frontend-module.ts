@@ -23,11 +23,12 @@ import {
     ChePluginService
 } from '../common/che-protocol';
 import { WebSocketConnectionProvider, bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
-// import { FrontendApplicationContribution, FrontendApplication, WidgetFactory,  } from '@theia/core/lib/browser';
+import { CommandContribution } from '@theia/core/lib/common';
 import { CheTaskClientImpl } from './che-task-client';
 import { ChePluginViewContribution } from './plugin/che-plugin-view-contribution';
 import { ChePluginWidget } from './plugin/che-plugin-widget';
 import { ChePluginFrontendService } from './plugin/che-plugin-frontend-service';
+import { ChePluginCommandContribution } from './plugin/che-plugin-command-contribution';
 
 export default new ContainerModule(bind => {
     bind(CheApiProvider).toSelf().inSingletonScope();
@@ -60,4 +61,6 @@ export default new ContainerModule(bind => {
         createWidget: () => ctx.container.get(ChePluginWidget)
     }));
 
+    bind(ChePluginCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ChePluginCommandContribution);
 });

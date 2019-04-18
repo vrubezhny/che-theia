@@ -15,44 +15,106 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { ChePluginMetadata, ChePluginService, CheApiService } from '../../common/che-protocol';
-import { HostedPluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 
-// import { MessageService } from '@theia/core/lib/common';
-import { MessageService } from '@theia/core/lib/common/message-service';
+import {
+    ChePluginRegistry,
+    ChePluginMetadata,
+    ChePluginService,
+    CheApiService
+} from '../../common/che-protocol';
+
+import { HostedPluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
+// import { MessageService } from '@theia/core/lib/common/message-service';
+import { MessageService, Emitter, Event } from '@theia/core/lib/common';
 // import { WebSocketConnectionProvider, bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
 
 @injectable()
 export class ChePluginFrontendService {
 
-    private workspacePlugins: string[] = [];
+    /**
+     * Default plugin registry
+     */
+    private defaultRegistry: ChePluginRegistry;
 
-    private defaultPluginRegistryURI: string;
+    /**
+     * Active plugin registry.
+     * Plugin widget should display the list of plugins from this registry.
+     */
+    private activeRegistry: ChePluginRegistry;
 
+    /**
+     * List of plugins configured in workspace config.
+     */
+    private workspacePlugins: string[];
+
+    /**
+     * List of plugins, currently available on active plugin registry.
+     */
     private availablePlugins: ChePluginMetadata[] = [];
 
-    constructor(
-        @inject(ChePluginService) protected readonly chePluginService: ChePluginService,
-        @inject(HostedPluginServer) protected readonly hostedPluginServer: HostedPluginServer,
-        @inject(CheApiService) protected readonly cheApiService: CheApiService,
-        @inject(MessageService) protected readonly messageService: MessageService
-    ) {
+    @inject(ChePluginService)
+    protected readonly chePluginService: ChePluginService;
+
+    @inject(HostedPluginServer)
+    protected readonly hostedPluginServer: HostedPluginServer;
+
+    @inject(CheApiService)
+    protected readonly cheApiService: CheApiService;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
+    protected readonly pluginRegistryChanged = new Emitter<ChePluginRegistry>();
+
+    get onPluginRegistryChanged(): Event<ChePluginRegistry> {
+        return this.pluginRegistryChanged.event;
     }
 
+    getDefaultRegistry(): ChePluginRegistry {
+        return this.defaultRegistry;
+    }
+
+    changeRegistry(registry: ChePluginRegistry): void {
+        this.activeRegistry = registry;
+        this.pluginRegistryChanged.fire(registry);
+    }
+
+    private async initDefaults(): Promise<void> {
+        console.log('>> INIT DEFAULTS');
+        console.log('> DEFAULT REGISTRY ', this.defaultRegistry);
+        console.log('> ACTIVE REGISTRY ', this.activeRegistry);
+
+        if (!this.defaultRegistry) {
+            const defaultRegistryURI = await this.chePluginService.getDefaultPluginRegistryURI();
+            console.log('> default registry URI ', defaultRegistryURI);
+
+            this.defaultRegistry = {
+                name: 'Default',
+                uri: defaultRegistryURI
+            };
+        }
+
+        if (!this.activeRegistry) {
+            this.activeRegistry = this.defaultRegistry;
+        }
+
+        if (!this.workspacePlugins) {
+            // Get list of plugins from workspace config
+            this.workspacePlugins = await this.chePluginService.getWorkspacePlugins();
+        }
+    }
+
+    /**
+     * Returns plugin list from active registry
+     */
     async getPlugins(): Promise<ChePluginMetadata[]> {
         // get list of deployed plugins from runtime
         // will be used in the future
         // const metadata = await this.hostedPluginServer.getDeployedMetadata();
 
-        // Get list of plugins from workspace config
-        this.workspacePlugins = await this.chePluginService.getWorkspacePlugins();
+        await this.initDefaults();
 
-        this.defaultPluginRegistryURI = await this.chePluginService.getDefaultPluginRegistryURI();
-        console.log('> default plugin registry URI ', this.defaultPluginRegistryURI);
-
-        const activePluginRegistryURI = 'https://raw.githubusercontent.com/vitaliy-guliy/che-theia-plugin-registry/master';
-
-        this.availablePlugins = await this.chePluginService.getPlugins(activePluginRegistryURI);
+        this.availablePlugins = await this.chePluginService.getPlugins(this.activeRegistry.uri);
 
         return this.availablePlugins;
     }

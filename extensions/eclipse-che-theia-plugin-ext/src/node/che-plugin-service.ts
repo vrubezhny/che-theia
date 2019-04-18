@@ -41,6 +41,7 @@ export class ChePluginServiceImpl implements ChePluginService {
     }
 
     async getDefaultPluginRegistryURI(): Promise<string> {
+        console.log('>> get DEFAULT PLUGIN REGISTRY URI...');
         try {
             const workpsaceSettings: WorkspaceSettings = await this.cheApiService.getWorkspaceSettings();
             if (workpsaceSettings && workpsaceSettings['cheWorkspacePluginRegistryUrl']) {
@@ -51,7 +52,7 @@ export class ChePluginServiceImpl implements ChePluginService {
 
             return Promise.reject('Plugin registry URI is not set.');
         } catch (error) {
-            // console.log('ERROR', error);
+            console.log('ERROR', error);
             // return Promise.reject('Unable to get default plugin registry URI. ' + error.message);
 
             // A temporary solution. Should throw an error instead.
@@ -146,6 +147,8 @@ export class ChePluginServiceImpl implements ChePluginService {
 
             const disabled: boolean = props.type === 'Che Editor';
 
+            const installId: string = 'vetal';
+
             return {
                 id: props.id,
                 type: props.type,
@@ -154,7 +157,8 @@ export class ChePluginServiceImpl implements ChePluginService {
                 description: props.description,
                 publisher: props.publisher,
                 icon: props.icon,
-                disabled: disabled
+                disabled: disabled,
+                installId: installId
             };
         } catch (error) {
             console.log(error);

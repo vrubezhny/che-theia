@@ -417,6 +417,11 @@ export interface CheTaskClient {
     onKillEvent: Event<number>
 }
 
+export interface ChePluginRegistry {
+    name: string,
+    uri: string
+}
+
 export interface ChePluginMetadata {
     id: string,
     type: string,
@@ -426,7 +431,10 @@ export interface ChePluginMetadata {
     publisher: string,
     icon: string,
 
-    disabled: boolean
+    disabled: boolean,
+
+    // ID to install in workspace configuration
+    installId: string
 
     // url: string,
     // repository: string,
