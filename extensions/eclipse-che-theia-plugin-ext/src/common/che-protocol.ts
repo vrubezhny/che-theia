@@ -433,8 +433,8 @@ export interface ChePluginMetadata {
 
     disabled: boolean,
 
-    // ID to install in workspace configuration
-    installId: string
+    // Plugin KEY. Used to set in workpsace configuration
+    key: string
 
     // url: string,
     // repository: string,
@@ -456,7 +456,7 @@ export interface ChePluginService {
     /**
      * Returns URI og default plugin registry;
      */
-    getDefaultPluginRegistryURI(): Promise<string>;
+    getDefaultRegistryURI(): Promise<string>;
 
     /**
      * Returns a list of available plugins on the plugin registry.
@@ -474,11 +474,11 @@ export interface ChePluginService {
     /**
      * Adds a plugin to workspace configuration.
      */
-    addPlugin(plugin: string): Promise<void>;
+    addPlugin(pluginKey: string): Promise<void>;
 
     /**
      * Removes a plugin from workspace configuration.
      */
-    removePlugin(plugin: string): Promise<void>;
+    removePlugin(pluginKey: string): Promise<void>;
 
 }

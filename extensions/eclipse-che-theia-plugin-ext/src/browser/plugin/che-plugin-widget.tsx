@@ -21,7 +21,7 @@ import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import * as React from 'react';
 import { ChePluginRegistry, ChePluginMetadata } from '../../common/che-protocol';
-import { ChePluginFrontendService } from './che-plugin-frontend-service';
+import { ChePluginManager } from './che-plugin-manager';
 
 @injectable()
 export class ChePluginWidget extends ReactWidget {
@@ -33,9 +33,10 @@ export class ChePluginWidget extends ReactWidget {
     protected ready = false;
 
     protected needToBeRendered = true;
+    protected needToRestartWorkspace = false;
 
     constructor(
-        @inject(ChePluginFrontendService) protected chePluginFrontendService: ChePluginFrontendService
+        @inject(ChePluginManager) protected chePluginManager: ChePluginManager
     ) {
         super();
         this.id = 'che-plugins';
@@ -47,8 +48,11 @@ export class ChePluginWidget extends ReactWidget {
 
         this.node.tabIndex = 0;
 
-        chePluginFrontendService.onPluginRegistryChanged(registry => this.updatePlugins(registry));
+        chePluginManager.onPluginRegistryChanged(
+            registry => this.onPluginRegistryChanged(registry));
 
+        chePluginManager.onWorkspaceConfigurationChanged(
+            needToRestart => this.onWorkspaceConfigurationChanged(needToRestart));
     }
 
     protected onAfterShow(msg: Message) {
@@ -68,11 +72,22 @@ export class ChePluginWidget extends ReactWidget {
         this.node.focus();
     }
 
+    protected async onPluginRegistryChanged(registry?: ChePluginRegistry): Promise<void> {
+        this.ready = false;
+        this.update();
+
+        await this.updatePlugins(registry);
+    }
+
+    protected async onWorkspaceConfigurationChanged(needToRestart: boolean): Promise<void> {
+        if (this.needToRestartWorkspace !== needToRestart) {
+            this.needToRestartWorkspace = needToRestart;
+            this.update();
+        }
+    }
+
     protected async updatePlugins(registry?: ChePluginRegistry): Promise<void> {
-        this.plugins = await this.chePluginFrontendService.getPlugins();
-
-        console.log('CLIENT WIDGET. PLUGINS: ', this.plugins);
-
+        this.plugins = await this.chePluginManager.getPlugins();
         this.ready = true;
         this.update();
     }
@@ -84,6 +99,7 @@ export class ChePluginWidget extends ReactWidget {
             }
 
             return <React.Fragment>
+                {this.renderUpdateWorkspaceControl()}
                 {this.renderPluginList()}
             </React.Fragment>;
         } else {
@@ -93,13 +109,30 @@ export class ChePluginWidget extends ReactWidget {
         }
     }
 
+    protected renderUpdateWorkspaceControl(): React.ReactNode {
+        if (this.needToRestartWorkspace) {
+            return <div className='che-plugins-notification' onClick={this.restartWorkspace}>
+                <AlertMessage type='SUCCESS' header='Restart your workspace to apply changes.' />
+            </div>;
+        }
+
+        return undefined;
+    }
+
     protected renderPluginList(): React.ReactNode {
         const list = this.plugins.map(plugin =>
-            <ChePlugin key={plugin.id + ':' + plugin.version} plugin={plugin} pluginService={this.chePluginFrontendService}></ChePlugin>);
+            <ChePlugin key={plugin.key}
+                plugin={plugin} pluginManager={this.chePluginManager}></ChePlugin>);
+        // <ChePlugin key={plugin.id + ':' + plugin.version}
+        //     plugin={plugin} pluginManager={this.chePluginManager}></ChePlugin>);
 
         return <div className='che-plugin-list'>
             {list}
         </div>;
+    }
+
+    protected restartWorkspace = async () => {
+        await this.chePluginManager.restartWorkspace();
     }
 
 }
@@ -110,21 +143,22 @@ export class ChePlugin extends React.Component<ChePlugin.Props, ChePlugin.State>
         super(props);
 
         const plugin = props.plugin;
-        const state = props.pluginService.isPluginInstalled(plugin) ? 'installed' : 'not_installed';
+        const state = props.pluginManager.isPluginInstalled(plugin) ? 'installed' : 'not_installed';
 
         this.state = {
             pluginState: state
         };
     }
 
-    id(): string {
-        return this.props.plugin.id + ':' + this.props.plugin.version;
-    }
+    // id(): string {
+    //     return this.props.plugin.id + ':' + this.props.plugin.version;
+    // }
 
     render(): React.ReactNode {
         const plugin = this.props.plugin;
 
-        return <div key={plugin.id} className='che-plugin'>
+        // I'm not sure whether 'key' attribute is necessary here
+        return <div key={plugin.key} className='che-plugin'>
             <div className='che-plugin-content'>
                 <div className='che-plugin-icon'>
                     <img src={plugin.icon}></img>
@@ -177,7 +211,7 @@ export class ChePlugin extends React.Component<ChePlugin.Props, ChePlugin.State>
         const previousState = this.state.pluginState;
         this.set('installing');
 
-        const installed = await this.props.pluginService.install(this.id());
+        const installed = await this.props.pluginManager.install(this.props.plugin);
         if (installed) {
             this.set('installed');
         } else {
@@ -189,7 +223,7 @@ export class ChePlugin extends React.Component<ChePlugin.Props, ChePlugin.State>
         const previousState = this.state.pluginState;
         this.set('removing');
 
-        const removed = await this.props.pluginService.remove(this.id());
+        const removed = await this.props.pluginManager.remove(this.props.plugin);
         if (removed) {
             this.set('not_installed');
         } else {
@@ -208,7 +242,7 @@ export type ChePluginState =
 export namespace ChePlugin {
 
     export interface Props {
-        pluginService: ChePluginFrontendService;
+        pluginManager: ChePluginManager;
         plugin: ChePluginMetadata;
     }
 

@@ -34,29 +34,36 @@ export class ChePluginServiceImpl implements ChePluginService {
 
     private cheApiService: CheApiService;
 
+    private defaultRegistryURI: string;
+
     constructor(container: interfaces.Container) {
         this.cheApiService = container.get(CheApiService);
 
         // this.pluginRegistryUrl = 'https://che-plugin-registry.openshift.io';
     }
 
-    async getDefaultPluginRegistryURI(): Promise<string> {
-        console.log('>> get DEFAULT PLUGIN REGISTRY URI...');
+    async getDefaultRegistryURI(): Promise<string> {
+        if (this.defaultRegistryURI) {
+            return this.defaultRegistryURI;
+        }
+
+        // console.log('>> get DEFAULT PLUGIN REGISTRY URI...');
         try {
             const workpsaceSettings: WorkspaceSettings = await this.cheApiService.getWorkspaceSettings();
             if (workpsaceSettings && workpsaceSettings['cheWorkspacePluginRegistryUrl']) {
-                const pluginRegistryUrl = workpsaceSettings['cheWorkspacePluginRegistryUrl'];
-                console.log('>>> cheWorkspacePluginRegistryUrl: ' + pluginRegistryUrl);
-                return pluginRegistryUrl;
+                this.defaultRegistryURI = workpsaceSettings['cheWorkspacePluginRegistryUrl'];
+                // console.log('>>> cheWorkspacePluginRegistryUrl: ' + pluginRegistryUrl);
+                return this.defaultRegistryURI;
             }
 
             return Promise.reject('Plugin registry URI is not set.');
         } catch (error) {
-            console.log('ERROR', error);
+            // console.log('ERROR', error);
             // return Promise.reject('Unable to get default plugin registry URI. ' + error.message);
 
             // A temporary solution. Should throw an error instead.
-            return 'https://che-plugin-registry.openshift.io';
+            this.defaultRegistryURI = 'https://che-plugin-registry.openshift.io';
+            return this.defaultRegistryURI;
         }
     }
 
@@ -67,26 +74,26 @@ export class ChePluginServiceImpl implements ChePluginService {
      * @return list of available plugins
      */
     async getPlugins(registryURI: string): Promise<ChePluginMetadata[]> {
+        // ensure default plugin registry URI is set
+        if (!this.defaultRegistryURI) {
+            await this.getDefaultRegistryURI();
+        }
+
+        // all the plugins present on marketplace
         const marketplacePlugins = await this.loadPluginList(registryURI);
-        // const marketplacePlugins = await this.getPluginsFromMarketplace();
         if (!marketplacePlugins) {
             return Promise.reject('Unable to get plugins from marketplace');
         }
 
-        console.log('> MARKETPLACE PLUGINS > ', marketplacePlugins);
-
+        const shortKeyFormat = registryURI === this.defaultRegistryURI;
         const plugins: ChePluginMetadata[] = await Promise.all(
             marketplacePlugins.map(async marketplacePlugin => {
                 const pluginYamlURI = this.getPluginYampURI(registryURI, marketplacePlugin);
-                return await this.loadPluginMetadata(pluginYamlURI);
+                return await this.loadPluginMetadata(pluginYamlURI, shortKeyFormat);
             }
             ));
 
-        // console.log('================================================================================');
-        // console.log('> plugins ', plugins);
-        const filteredPlugins = plugins.filter(plugin => plugin !== null && plugin !== undefined);
-        // console.log('================================================================================');
-        return filteredPlugins;
+        return plugins.filter(plugin => plugin !== null && plugin !== undefined);
     }
 
     /**
@@ -139,7 +146,7 @@ export class ChePluginServiceImpl implements ChePluginService {
         }
     }
 
-    private async loadPluginMetadata(yamlURI: string): Promise<ChePluginMetadata> {
+    private async loadPluginMetadata(yamlURI: string, shortKeyFormat: boolean): Promise<ChePluginMetadata> {
         try {
             const noCache = { headers: { 'Cache-Control': 'no-cache' } };
             const data = (await this.axiosInstance.get<ChePluginMetadata[]>(yamlURI, noCache)).data;
@@ -147,7 +154,16 @@ export class ChePluginServiceImpl implements ChePluginService {
 
             const disabled: boolean = props.type === 'Che Editor';
 
-            const installId: string = 'vetal';
+            let key: string;
+            if (shortKeyFormat) {
+                key = props.id + ':' + props.version;
+            } else {
+                const suffix = `${props.id}/${props.version}/meta.yaml`;
+                if (yamlURI.endsWith(suffix)) {
+                    const uri = yamlURI.substring(0, yamlURI.length - suffix.length);
+                    key = `${uri}${props.id}:${props.version}`;
+                }
+            }
 
             return {
                 id: props.id,
@@ -158,50 +174,13 @@ export class ChePluginServiceImpl implements ChePluginService {
                 publisher: props.publisher,
                 icon: props.icon,
                 disabled: disabled,
-                installId: installId
+                key: key
             };
         } catch (error) {
             console.log(error);
             return Promise.reject('Unable to load plugin metadata. ' + error.message);
         }
     }
-
-    // /**
-    //  * Loads plugin metadata
-    //  */
-    // private async getChePluginMetadata(pluginYamlURL: string): Promise<ChePluginMetadata | undefined> {
-    //     const baseURL = await this.getBaseURL();
-    //     if (pluginYamlURL && baseURL) {
-    //         try {
-    //             const request = await this.axiosInstance.request<ChePluginMetadata[]>({
-    //                 method: 'GET',
-    //                 baseURL: baseURL,
-    //                 url: pluginYamlURL
-    //             });
-
-    //             if (request.status === 200) {
-    //                 const props: ChePluginMetadata = yaml.safeLoad(request.data);
-
-    //                 const disabled: boolean = props.type === 'Che Editor';
-
-    //                 return {
-    //                     id: props.id,
-    //                     type: props.type,
-    //                     name: props.name,
-    //                     version: props.version,
-    //                     description: props.description,
-    //                     publisher: props.publisher,
-    //                     icon: props.icon,
-    //                     disabled: disabled
-    //                 };
-    //             }
-    //         } catch (error) {
-    //             console.log(error);
-    //         }
-    //     }
-
-    //     return undefined;
-    // }
 
     /**
      * Returns list of plugins described in workspace configuration.
@@ -221,41 +200,47 @@ export class ChePluginServiceImpl implements ChePluginService {
      * Sets new list of plugins to workspace configuration.
      */
     async setWorkspacePlugins(plugins: string[]): Promise<void> {
-        const workspace: cheApi.workspace.Workspace = await this.cheApiService.currentWorkspace();
-        const workspaceId = workspace.id;
+        console.log('Set workspace plugins...');
+        console.log('----------------------------------------------------------------------------------');
+        plugins.forEach(plugin => {
+            console.log('> plugin > ' + plugin);
+        });
+        console.log('----------------------------------------------------------------------------------');
 
+        const workspace: cheApi.workspace.Workspace = await this.cheApiService.currentWorkspace();
         if (workspace.config && workspace.config.attributes && workspace.config.attributes['plugins']) {
             workspace.config.attributes['plugins'] = plugins.join(',');
-
-            await this.cheApiService.updateWorkspace(workspaceId, workspace);
+            await this.cheApiService.updateWorkspace(workspace.id, workspace);
         }
     }
 
     /**
      * Adds a plugin to workspace configuration.
      */
-    async addPlugin(plugin: string): Promise<void> {
+    async addPlugin(pluginKey: string): Promise<void> {
         try {
             const plugins: string[] = await this.getWorkspacePlugins();
-            plugins.push(plugin);
+            plugins.push(pluginKey);
             await this.setWorkspacePlugins(plugins);
         } catch (error) {
-            console.error(error);
-            return Promise.reject('Unable to install plugin ' + plugin + ' ' + error.message);
+            // Uncomment following error output and rejection when the workspace service become ready
+            // console.error(error);
+            // return Promise.reject('Unable to install plugin ' + plugin + ' ' + error.message);
         }
     }
 
     /**
      * Removes a plugin from workspace configuration.
      */
-    async removePlugin(plugin: string): Promise<void> {
+    async removePlugin(pluginKey: string): Promise<void> {
         try {
             const plugins: string[] = await this.getWorkspacePlugins();
-            const filteredPlugins = plugins.filter(p => p !== plugin);
+            const filteredPlugins = plugins.filter(p => p !== pluginKey);
             await this.setWorkspacePlugins(filteredPlugins);
         } catch (error) {
-            console.error(error);
-            return Promise.reject('Unable to remove plugin ' + plugin + ' ' + error.message);
+            // Uncomment following error output and rejection when the workspace service become ready
+            // console.error(error);
+            // return Promise.reject('Unable to remove plugin ' + plugin + ' ' + error.message);
         }
     }
 

@@ -19,7 +19,7 @@ import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
 // import { MessageService } from '@theia/core/lib/common/message-service';
 import { MessageService, Command } from '@theia/core/lib/common';
 import { ChePluginRegistry } from '../../common/che-protocol';
-import { ChePluginFrontendService } from './che-plugin-frontend-service';
+import { ChePluginManager } from './che-plugin-manager';
 
 const PLUGIN_MANAGER_ID = 'plugin-manager';
 const PLUGIN_MANAGER_CATEGORY = 'Plugin Manager';
@@ -54,8 +54,8 @@ export class ChePluginCommandContribution implements CommandContribution {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    @inject(ChePluginFrontendService)
-    protected readonly chePluginFrontendService: ChePluginFrontendService;
+    @inject(ChePluginManager)
+    protected readonly chePluginManager: ChePluginManager;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(ADD_REGISTRY, {
@@ -87,18 +87,21 @@ export class ChePluginCommandContribution implements CommandContribution {
         // const default: ChePluginRegistry = this.chePluginFrontendService.getDefaultRegistry();
         // console.log('> default registry ', default);
         // this.chePluginFrontendService.changeRegistry(default);
-        const defaultRegistry = this.chePluginFrontendService.getDefaultRegistry();
+        const defaultRegistry = this.chePluginManager.getDefaultRegistry();
         console.log('> defaultRegistry ', defaultRegistry);
-        this.chePluginFrontendService.changeRegistry(defaultRegistry);
+        this.chePluginManager.changeRegistry(defaultRegistry);
     }
 
     async listCustomRegistry(): Promise<void> {
         const custom: ChePluginRegistry = {
             name: 'My registry',
             uri: 'https://raw.githubusercontent.com/vitaliy-guliy/che-theia-plugin-registry/master'
+            // 'https://raw.githubusercontent.com/vitaliy-guliy/che-theia-plugin-registry/master/plugins/plugins.json'
+            // 'https://raw.githubusercontent.com/vitaliy-guliy/che-theia-plugin-registry/master/plugins/my.json'
+            // 'https://raw.githubusercontent.com/vitaliy-guliy/che-theia-plugin-registry/master/alternative.json'
         };
 
-        this.chePluginFrontendService.changeRegistry(custom);
+        this.chePluginManager.changeRegistry(custom);
     }
 
 }

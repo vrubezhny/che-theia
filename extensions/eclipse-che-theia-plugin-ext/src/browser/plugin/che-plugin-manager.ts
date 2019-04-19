@@ -24,12 +24,10 @@ import {
 } from '../../common/che-protocol';
 
 import { HostedPluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
-// import { MessageService } from '@theia/core/lib/common/message-service';
 import { MessageService, Emitter, Event } from '@theia/core/lib/common';
-// import { WebSocketConnectionProvider, bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
 
 @injectable()
-export class ChePluginFrontendService {
+export class ChePluginManager {
 
     /**
      * Default plugin registry
@@ -66,8 +64,14 @@ export class ChePluginFrontendService {
 
     protected readonly pluginRegistryChanged = new Emitter<ChePluginRegistry>();
 
+    protected readonly workspaceConfigurationChanged = new Emitter<boolean>();
+
     get onPluginRegistryChanged(): Event<ChePluginRegistry> {
         return this.pluginRegistryChanged.event;
+    }
+
+    get onWorkspaceConfigurationChanged(): Event<boolean> {
+        return this.workspaceConfigurationChanged.event;
     }
 
     getDefaultRegistry(): ChePluginRegistry {
@@ -80,13 +84,8 @@ export class ChePluginFrontendService {
     }
 
     private async initDefaults(): Promise<void> {
-        console.log('>> INIT DEFAULTS');
-        console.log('> DEFAULT REGISTRY ', this.defaultRegistry);
-        console.log('> ACTIVE REGISTRY ', this.activeRegistry);
-
         if (!this.defaultRegistry) {
-            const defaultRegistryURI = await this.chePluginService.getDefaultPluginRegistryURI();
-            console.log('> default registry URI ', defaultRegistryURI);
+            const defaultRegistryURI = await this.chePluginService.getDefaultRegistryURI();
 
             this.defaultRegistry = {
                 name: 'Default',
@@ -116,39 +115,52 @@ export class ChePluginFrontendService {
 
         this.availablePlugins = await this.chePluginService.getPlugins(this.activeRegistry.uri);
 
+        // console.log('----------------------------------------------------------------------------------');
+        // this.availablePlugins.forEach(plugin => {
+        //     console.log('> plugin > ' + plugin.key);
+        // });
+        // console.log('----------------------------------------------------------------------------------');
+
         return this.availablePlugins;
     }
 
     isPluginInstalled(plugin: ChePluginMetadata): boolean {
-        const key = plugin.id + ':' + plugin.version;
-        const index = this.workspacePlugins.indexOf(key);
-        return index >= 0;
+        // const key = plugin.id + ':' + plugin.version;
+        // const index = this.workspacePlugins.indexOf(plugin.key);
+        // return index >= 0;
+        return this.workspacePlugins.indexOf(plugin.key) >= 0;
     }
 
-    async install(plugin: string): Promise<boolean> {
-        this.messageService.info('Installing plugin ' + plugin);
+    async install(plugin: ChePluginMetadata): Promise<boolean> {
+        this.messageService.info(`Installing plugin ${plugin.name}:${plugin.version}...`);
 
         try {
             await this.delay(1000);
-            await this.chePluginService.addPlugin(plugin);
+            await this.chePluginService.addPlugin(plugin.key);
             await this.delay(1000);
+
+            this.messageService.info(`Plugin ${plugin.name}:${plugin.version} has been successfully installed`);
+            this.notifyWorkspaceConfigurationChanged();
             return true;
         } catch (error) {
-            this.messageService.error('Unable to install plugin ' + plugin + ' ' + error.message);
+            this.messageService.error(`Unable to install plugin ${plugin.name}:${plugin.version}. ${error.message}`);
             return false;
         }
     }
 
-    async remove(plugin: string): Promise<boolean> {
-        this.messageService.info('Removing plugin ' + plugin);
+    async remove(plugin: ChePluginMetadata): Promise<boolean> {
+        this.messageService.info(`Removing plugin ${plugin.name}:${plugin.version}...`);
 
         try {
             await this.delay(1000);
-            await this.chePluginService.removePlugin(plugin);
+            await this.chePluginService.removePlugin(plugin.key);
             await this.delay(1000);
+
+            this.messageService.info(`Plugin ${plugin.name}:${plugin.version} has been successfully removed`);
+            this.notifyWorkspaceConfigurationChanged();
             return true;
         } catch (error) {
-            this.messageService.error('Unable to remove plugin ' + plugin + ' ' + error.message);
+            this.messageService.error(`Unable to remove plugin ${plugin.name}:${plugin.version}. ${error.message}`);
             return false;
         }
     }
@@ -159,6 +171,20 @@ export class ChePluginFrontendService {
                 resolve();
             }, miliseconds);
         });
+    }
+
+    private notifyWorkspaceConfigurationChanged() {
+        setTimeout(() => {
+            this.workspaceConfigurationChanged.fire(true);
+        }, 500);
+    }
+
+    async restartWorkspace(): Promise<void> {
+        this.messageService.info('Workspace is restarting...');
+
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
     }
 
 }
