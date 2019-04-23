@@ -25,6 +25,8 @@ import {
 
 import { HostedPluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { MessageService, Emitter, Event } from '@theia/core/lib/common';
+// import { ConfirmDialog, ApplicationShell, SaveableWidget, NavigatableWidget } from '@theia/core/lib/browser';
+import { ConfirmDialog } from '@theia/core/lib/browser';
 
 @injectable()
 export class ChePluginManager {
@@ -41,9 +43,9 @@ export class ChePluginManager {
     private activeRegistry: ChePluginRegistry;
 
     /**
-     * List of plugins configured in workspace config.
+     * List of installed plugins received from workspace config.
      */
-    private workspacePlugins: string[];
+    private installedPlugins: string[];
 
     /**
      * List of plugins, currently available on active plugin registry.
@@ -86,21 +88,15 @@ export class ChePluginManager {
     private async initDefaults(): Promise<void> {
         if (!this.defaultRegistry) {
             this.defaultRegistry = await this.chePluginService.getDefaultRegistry();
-
-            // const defaultRegistryURI = await this.chePluginService.getDefaultRegistryURI();
-            // this.defaultRegistry = {
-            //     name: 'Default',
-            //     uri: defaultRegistryURI
-            // };
         }
 
         if (!this.activeRegistry) {
             this.activeRegistry = this.defaultRegistry;
         }
 
-        if (!this.workspacePlugins) {
+        if (!this.installedPlugins) {
             // Get list of plugins from workspace config
-            this.workspacePlugins = await this.chePluginService.getWorkspacePlugins();
+            this.installedPlugins = await this.chePluginService.getWorkspacePlugins();
         }
     }
 
@@ -115,32 +111,25 @@ export class ChePluginManager {
         await this.initDefaults();
 
         this.availablePlugins = await this.chePluginService.getPlugins(this.activeRegistry);
-
-        // console.log('----------------------------------------------------------------------------------');
-        // this.availablePlugins.forEach(plugin => {
-        //     console.log('> plugin > ' + plugin.key);
-        // });
-        // console.log('----------------------------------------------------------------------------------');
-
         return this.availablePlugins;
     }
 
     isPluginInstalled(plugin: ChePluginMetadata): boolean {
-        // const key = plugin.id + ':' + plugin.version;
-        // const index = this.workspacePlugins.indexOf(plugin.key);
-        // return index >= 0;
-        return this.workspacePlugins.indexOf(plugin.key) >= 0;
+        return this.installedPlugins.indexOf(plugin.key) >= 0;
     }
 
     async install(plugin: ChePluginMetadata): Promise<boolean> {
-        this.messageService.info(`Installing plugin ${plugin.name}:${plugin.version}...`);
-
         try {
-            await this.delay(1000);
+            // add the plugin to workspace configuration
+            // await this.delay(1000);
             await this.chePluginService.addPlugin(plugin.key);
             await this.delay(1000);
-
             this.messageService.info(`Plugin ${plugin.name}:${plugin.version} has been successfully installed`);
+
+            // add the plugin to the list of workspace plugins
+            this.installedPlugins.push(plugin.key);
+
+            // notify that workspace configuration has been changed
             this.notifyWorkspaceConfigurationChanged();
             return true;
         } catch (error) {
@@ -150,14 +139,17 @@ export class ChePluginManager {
     }
 
     async remove(plugin: ChePluginMetadata): Promise<boolean> {
-        this.messageService.info(`Removing plugin ${plugin.name}:${plugin.version}...`);
-
         try {
-            await this.delay(1000);
+            // remove the plugin from workspace configuration
+            // await this.delay(1000);
             await this.chePluginService.removePlugin(plugin.key);
             await this.delay(1000);
-
             this.messageService.info(`Plugin ${plugin.name}:${plugin.version} has been successfully removed`);
+
+            // remove the plugin from the list of workspace plugins
+            this.installedPlugins = this.installedPlugins.filter(p => p !== plugin.key);
+
+            // notify that workspace configuration has been changed
             this.notifyWorkspaceConfigurationChanged();
             return true;
         } catch (error) {
@@ -181,18 +173,23 @@ export class ChePluginManager {
     }
 
     async restartWorkspace(): Promise<void> {
-        this.messageService.info('Workspace is restarting...');
+        const confirm = new ConfirmDialog({
+            title: 'Restart Workspace',
+            msg: 'Are you sure you want to restart your workspace?',
+            ok: 'Restart'
+        });
 
-        try {
-            await this.cheApiService.stop();
-            this.messageService.info('Workspace stopped!');
+        if (await confirm.open()) {
+            this.messageService.info('Workspace is restarting...');
 
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
-
-        } catch (error) {
-            this.messageService.error(`Unable to restart your workspace. ${error.message}`);
+            try {
+                await this.cheApiService.stop();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } catch (error) {
+                this.messageService.error(`Unable to restart your workspace. ${error.message}`);
+            }
         }
     }
 
