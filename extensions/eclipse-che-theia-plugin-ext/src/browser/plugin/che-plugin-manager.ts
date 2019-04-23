@@ -27,6 +27,9 @@ import { HostedPluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol
 import { MessageService, Emitter, Event } from '@theia/core/lib/common';
 import { ConfirmDialog } from '@theia/core/lib/browser';
 
+import { ChePluginPreferences } from './che-plugin-preferences';
+import { PreferenceService, PreferenceScope } from '@theia/core/lib/browser/preferences';
+
 @injectable()
 export class ChePluginManager {
 
@@ -68,6 +71,12 @@ export class ChePluginManager {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
+    @inject(ChePluginPreferences)
+    protected readonly chePluginPreferences: ChePluginPreferences;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     protected readonly pluginRegistryChanged = new Emitter<ChePluginRegistry>();
 
     protected readonly workspaceConfigurationChanged = new Emitter<boolean>();
@@ -78,6 +87,28 @@ export class ChePluginManager {
 
     get onWorkspaceConfigurationChanged(): Event<boolean> {
         return this.workspaceConfigurationChanged.event;
+    }
+
+    /**
+     * Restores list of custom registries
+     */
+    private async restoreRegistryList(): Promise<void> {
+        // wait for preference service
+        await this.preferenceService.ready;
+
+        const prefs = this.chePluginPreferences['chePlugins.repositories'];
+        if (prefs) {
+            const instance = this;
+            Object.keys(prefs).forEach(repoName => {
+                if (repoName !== 'Default') {
+                    const uri = prefs[repoName];
+                    instance.registryList.push({
+                        name: repoName,
+                        uri: uri
+                    });
+                }
+            });
+        }
     }
 
     private async initDefaults(): Promise<void> {
@@ -91,6 +122,7 @@ export class ChePluginManager {
 
         if (!this.registryList) {
             this.registryList = [this.defaultRegistry];
+            await this.restoreRegistryList();
         }
 
         if (!this.installedPlugins) {
@@ -110,6 +142,16 @@ export class ChePluginManager {
 
     addRegistry(registry: ChePluginRegistry): void {
         this.registryList.push(registry);
+
+        // Save list of custom repositories to preferences
+        const prefs = {};
+        this.registryList.forEach(r => {
+            if (r.name !== 'Default') {
+                prefs[r.name] = r.uri;
+            }
+        });
+
+        this.preferenceService.set('chePlugins.repositories', prefs, PreferenceScope.User);
     }
 
     removeRegistry(registry: ChePluginRegistry): void {

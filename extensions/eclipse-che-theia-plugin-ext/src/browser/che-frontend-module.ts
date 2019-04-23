@@ -29,6 +29,7 @@ import { ChePluginViewContribution } from './plugin/che-plugin-view-contribution
 import { ChePluginWidget } from './plugin/che-plugin-widget';
 import { ChePluginManager } from './plugin/che-plugin-manager';
 import { ChePluginCommandContribution } from './plugin/che-plugin-command-contribution';
+import { bindChePluginPreferences } from './plugin/che-plugin-preferences';
 
 export default new ContainerModule(bind => {
     bind(CheApiProvider).toSelf().inSingletonScope();
@@ -45,6 +46,8 @@ export default new ContainerModule(bind => {
         const client: CheTaskClient = ctx.container.get(CheTaskClient);
         return provider.createProxy<CheTaskService>(CHE_TASK_SERVICE_PATH, client);
     }).inSingletonScope();
+
+    bindChePluginPreferences(bind);
 
     bind(ChePluginService).toDynamicValue(ctx => {
         const provider = ctx.container.get(WebSocketConnectionProvider);
