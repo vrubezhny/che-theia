@@ -16,7 +16,6 @@
 
 import { injectable, inject } from 'inversify';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
-// import { MessageService } from '@theia/core/lib/common/message-service';
 import { MessageService, Command } from '@theia/core/lib/common';
 import { ChePluginRegistry } from '../../common/che-protocol';
 import { ChePluginManager } from './che-plugin-manager';
@@ -88,17 +87,13 @@ export class ChePluginCommandContribution implements CommandContribution {
         // console.log('> default registry ', default);
         // this.chePluginFrontendService.changeRegistry(default);
         const defaultRegistry = this.chePluginManager.getDefaultRegistry();
-        console.log('> defaultRegistry ', defaultRegistry);
         this.chePluginManager.changeRegistry(defaultRegistry);
     }
 
     async listCustomRegistry(): Promise<void> {
         const custom: ChePluginRegistry = {
             name: 'My registry',
-            uri: 'https://raw.githubusercontent.com/vitaliy-guliy/che-theia-plugin-registry/master'
-            // 'https://raw.githubusercontent.com/vitaliy-guliy/che-theia-plugin-registry/master/plugins/plugins.json'
-            // 'https://raw.githubusercontent.com/vitaliy-guliy/che-theia-plugin-registry/master/plugins/my.json'
-            // 'https://raw.githubusercontent.com/vitaliy-guliy/che-theia-plugin-registry/master/alternative.json'
+            uri: 'https://raw.githubusercontent.com/vitaliy-guliy/che-theia-plugin-registry/master/plugins/plugins.json'
         };
 
         this.chePluginManager.changeRegistry(custom);

@@ -85,12 +85,13 @@ export class ChePluginManager {
 
     private async initDefaults(): Promise<void> {
         if (!this.defaultRegistry) {
-            const defaultRegistryURI = await this.chePluginService.getDefaultRegistryURI();
+            this.defaultRegistry = await this.chePluginService.getDefaultRegistry();
 
-            this.defaultRegistry = {
-                name: 'Default',
-                uri: defaultRegistryURI
-            };
+            // const defaultRegistryURI = await this.chePluginService.getDefaultRegistryURI();
+            // this.defaultRegistry = {
+            //     name: 'Default',
+            //     uri: defaultRegistryURI
+            // };
         }
 
         if (!this.activeRegistry) {
@@ -113,7 +114,7 @@ export class ChePluginManager {
 
         await this.initDefaults();
 
-        this.availablePlugins = await this.chePluginService.getPlugins(this.activeRegistry.uri);
+        this.availablePlugins = await this.chePluginService.getPlugins(this.activeRegistry);
 
         // console.log('----------------------------------------------------------------------------------');
         // this.availablePlugins.forEach(plugin => {
@@ -182,9 +183,17 @@ export class ChePluginManager {
     async restartWorkspace(): Promise<void> {
         this.messageService.info('Workspace is restarting...');
 
-        setTimeout(() => {
-            window.location.reload();
-        }, 2000);
+        try {
+            await this.cheApiService.stop();
+            this.messageService.info('Workspace stopped!');
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+
+        } catch (error) {
+            this.messageService.error(`Unable to restart your workspace. ${error.message}`);
+        }
     }
 
 }

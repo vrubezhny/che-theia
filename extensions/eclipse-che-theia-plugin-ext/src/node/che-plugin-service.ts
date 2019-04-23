@@ -7,7 +7,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  **********************************************************************/
-import { CheApiService, ChePluginService, ChePluginMetadata, WorkspaceSettings } from '../common/che-protocol';
+import {
+    CheApiService,
+    ChePluginService,
+    ChePluginRegistry,
+    ChePluginMetadata,
+    WorkspaceSettings
+} from '../common/che-protocol';
+
 import { injectable, interfaces } from 'inversify';
 import axios, { AxiosInstance } from 'axios';
 import { che as cheApi } from '@eclipse-che/api';
@@ -34,26 +41,43 @@ export class ChePluginServiceImpl implements ChePluginService {
 
     private cheApiService: CheApiService;
 
-    private defaultRegistryURI: string;
+    private defaultRegistry: ChePluginRegistry;
 
     constructor(container: interfaces.Container) {
         this.cheApiService = container.get(CheApiService);
-
-        // this.pluginRegistryUrl = 'https://che-plugin-registry.openshift.io';
     }
 
-    async getDefaultRegistryURI(): Promise<string> {
-        if (this.defaultRegistryURI) {
-            return this.defaultRegistryURI;
+    async getDefaultRegistry(): Promise<ChePluginRegistry> {
+        if (this.defaultRegistry) {
+            return this.defaultRegistry;
         }
 
-        // console.log('>> get DEFAULT PLUGIN REGISTRY URI...');
         try {
             const workpsaceSettings: WorkspaceSettings = await this.cheApiService.getWorkspaceSettings();
             if (workpsaceSettings && workpsaceSettings['cheWorkspacePluginRegistryUrl']) {
-                this.defaultRegistryURI = workpsaceSettings['cheWorkspacePluginRegistryUrl'];
-                // console.log('>>> cheWorkspacePluginRegistryUrl: ' + pluginRegistryUrl);
-                return this.defaultRegistryURI;
+                let uri = workpsaceSettings['cheWorkspacePluginRegistryUrl'];
+
+                console.log('---------------------------------------------------------------------------------');
+                console.log('> DEF REGISTRY URI TO: ' + uri);
+
+                if (uri.endsWith('/')) {
+                    uri = uri.substring(0, uri.length - 1);
+                }
+
+                if (!uri.endsWith('/plugins')) {
+                    uri += '/plugins/';
+                }
+
+                console.log('> DEF REGISTRY URI TO: ' + uri);
+                console.log('---------------------------------------------------------------------------------');
+
+                this.defaultRegistry = {
+                    name: 'Default',
+                    // type: 'service',
+                    uri: uri
+                };
+
+                return this.defaultRegistry;
             }
 
             return Promise.reject('Plugin registry URI is not set.');
@@ -62,33 +86,36 @@ export class ChePluginServiceImpl implements ChePluginService {
             // return Promise.reject('Unable to get default plugin registry URI. ' + error.message);
 
             // A temporary solution. Should throw an error instead.
-            this.defaultRegistryURI = 'https://che-plugin-registry.openshift.io';
-            return this.defaultRegistryURI;
+            this.defaultRegistry = {
+                name: 'Default',
+                uri: 'https://che-plugin-registry.openshift.io/plugins/'
+            };
+            return this.defaultRegistry;
         }
     }
 
     /**
      * Returns a list of available plugins on the plugin registry.
      *
-     * @param registryURI URI to the plugin registry
+     * @param registry ChePluginRegistry plugin registry
      * @return list of available plugins
      */
-    async getPlugins(registryURI: string): Promise<ChePluginMetadata[]> {
+    async getPlugins(registry: ChePluginRegistry): Promise<ChePluginMetadata[]> {
         // ensure default plugin registry URI is set
-        if (!this.defaultRegistryURI) {
-            await this.getDefaultRegistryURI();
+        if (!this.defaultRegistry) {
+            await this.getDefaultRegistry();
         }
 
         // all the plugins present on marketplace
-        const marketplacePlugins = await this.loadPluginList(registryURI);
+        const marketplacePlugins = await this.loadPluginList(registry);
         if (!marketplacePlugins) {
             return Promise.reject('Unable to get plugins from marketplace');
         }
 
-        const shortKeyFormat = registryURI === this.defaultRegistryURI;
+        const shortKeyFormat = registry.uri === this.defaultRegistry.uri;
         const plugins: ChePluginMetadata[] = await Promise.all(
             marketplacePlugins.map(async marketplacePlugin => {
-                const pluginYamlURI = this.getPluginYampURI(registryURI, marketplacePlugin);
+                const pluginYamlURI = this.getPluginYampURI(registry, marketplacePlugin);
                 return await this.loadPluginMetadata(pluginYamlURI, shortKeyFormat);
             }
             ));
@@ -99,51 +126,55 @@ export class ChePluginServiceImpl implements ChePluginService {
     /**
      * Loads list of plugins from plugin registry.
      *
-     * @param registryURI URI to the plugin registry
+     * @param registry ChePluginRegistry plugin registry
      * @return list of available plugins
      */
-    private async loadPluginList(registryURI: string): Promise<ChePluginMetadataInternal[] | undefined> {
-        const axiosInstance = this.axiosInstance;
-
-        const load = async function (url: string): Promise<ChePluginMetadataInternal[] | undefined> {
-            try {
-                const noCache = { headers: { 'Cache-Control': 'no-cache' } };
-                return (await axiosInstance.get<ChePluginMetadataInternal[]>(url, noCache)).data;
-            } catch (error) {
-                return undefined;
-            }
-        };
-
-        let plugins = await load(`${registryURI}/plugins/`);
-        if (!plugins) {
-            plugins = await load(`${registryURI}/plugins/plugins.json`);
+    private async loadPluginList(registry: ChePluginRegistry): Promise<ChePluginMetadataInternal[] | undefined> {
+        try {
+            const noCache = { headers: { 'Cache-Control': 'no-cache' } };
+            return (await this.axiosInstance.get<ChePluginMetadataInternal[]>(registry.uri, noCache)).data;
+        } catch (error) {
+            return undefined;
         }
-
-        return plugins;
     }
 
     /**
      * Creates an URI to plugin metadata yaml file.
      *
-     * @param registryURI URI to the plugin registry
+     * @param registry: ChePluginRegistry plugin registry
      * @param plugin plugin metadata
      * @return uri to plugin yaml file
      */
-    private getPluginYampURI(registryURI: string, plugin: ChePluginMetadataInternal): string | undefined {
+    private getPluginYampURI(registry: ChePluginRegistry, plugin: ChePluginMetadataInternal): string | undefined {
         if (plugin.links && plugin.links.self) {
             const self: string = plugin.links.self;
             if (self.startsWith('/')) {
                 // /vitaliy-guliy/che-theia-plugin-registry/master/plugins/org.eclipse.che.samples.hello-world-frontend-plugin/0.0.1/meta.yaml
-                const uri = new URI(registryURI);
+                const uri = new URI(registry.uri);
                 return `${uri.scheme}://${uri.authority}${self}`;
             } else {
+                const base = this.getBaseDirectory(registry);
                 // org.eclipse.che.samples.hello-world-frontend-plugin/0.0.1/meta.yaml
-                return `${registryURI}/plugins/${self}`;
+                return `${base}${self}`;
             }
-
         } else {
-            return `${registryURI}/plugins/${plugin.id}/${plugin.version}/meta.yaml`;
+            const base = this.getBaseDirectory(registry);
+            return `${base}${plugin.id}/${plugin.version}/meta.yaml`;
         }
+    }
+
+    private getBaseDirectory(registry: ChePluginRegistry): string {
+        let uri = registry.uri;
+
+        if (uri.endsWith('.json')) {
+            uri = uri.substring(0, uri.lastIndexOf('/') + 1);
+        } else {
+            if (!uri.endsWith('/')) {
+                uri += '/';
+            }
+        }
+
+        return uri;
     }
 
     private async loadPluginMetadata(yamlURI: string, shortKeyFormat: boolean): Promise<ChePluginMetadata> {

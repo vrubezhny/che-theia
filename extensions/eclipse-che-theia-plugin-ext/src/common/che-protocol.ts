@@ -380,6 +380,7 @@ export interface CheApiService {
     getWorkspaceById(workspaceId: string): Promise<cheApi.workspace.Workspace>;
 
     updateWorkspace(workspaceId: string, workspace: cheApi.workspace.Workspace): Promise<cheApi.workspace.Workspace>;
+    stop(): Promise<void>;
 
     getFactoryById(factoryId: string): Promise<cheApi.factory.Factory>;
 
@@ -435,16 +436,6 @@ export interface ChePluginMetadata {
 
     // Plugin KEY. Used to set in workpsace configuration
     key: string
-
-    // url: string,
-    // repository: string,
-    // category: string,
-    // firstPublicationDate: string,
-    // latestUpdateDate: string,
-    // attributes: {
-    //     containerImage: string,
-    //     [attribute: string]: string
-    // }
 }
 
 export const CHE_PLUGIN_SERVICE_PATH = '/che-plugin-service';
@@ -454,17 +445,17 @@ export const ChePluginService = Symbol('ChePluginService');
 export interface ChePluginService {
 
     /**
-     * Returns URI og default plugin registry;
+     * Returns default plugin registry;
      */
-    getDefaultRegistryURI(): Promise<string>;
+    getDefaultRegistry(): Promise<ChePluginRegistry>;
 
     /**
      * Returns a list of available plugins on the plugin registry.
      *
-     * @param registryURI URI to the plugin registry
+     * @param registry ChePluginRegistry plugin registry
      * @return list of available plugins
      */
-    getPlugins(registryURI: string): Promise<ChePluginMetadata[]>;
+    getPlugins(registry: ChePluginRegistry): Promise<ChePluginMetadata[]>;
 
     /**
      * Returns list of plugins described in workspace configuration.
