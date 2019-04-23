@@ -19,6 +19,9 @@ import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
 import { MessageService, Command } from '@theia/core/lib/common';
 import { ChePluginRegistry } from '../../common/che-protocol';
 import { ChePluginManager } from './che-plugin-manager';
+import { QuickInputService } from '@theia/core/lib/browser';
+import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';
+import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
 
 const PLUGIN_MANAGER_ID = 'plugin-manager';
 const PLUGIN_MANAGER_CATEGORY = 'Plugin Manager';
@@ -26,25 +29,13 @@ const PLUGIN_MANAGER_CATEGORY = 'Plugin Manager';
 export const ADD_REGISTRY: Command = {
     id: `${PLUGIN_MANAGER_ID}:add-registry`,
     category: PLUGIN_MANAGER_CATEGORY,
-    label: 'ADD Registry'
+    label: 'Add Registry'
 };
 
-export const OPEN_REGISTRY: Command = {
-    id: `${PLUGIN_MANAGER_ID}:open-registry`,
+export const CHANGE_REGISTRY: Command = {
+    id: `${PLUGIN_MANAGER_ID}:change-registry`,
     category: PLUGIN_MANAGER_CATEGORY,
-    label: 'Open Registry'
-};
-
-export const LIST_DEFAULT_REGISTRY: Command = {
-    id: `${PLUGIN_MANAGER_ID}:list-default-registry`,
-    category: PLUGIN_MANAGER_CATEGORY,
-    label: 'List Default Registry'
-};
-
-export const LIST_CUSTOM_REGISTRY: Command = {
-    id: `${PLUGIN_MANAGER_ID}:list-custom-registry`,
-    category: PLUGIN_MANAGER_CATEGORY,
-    label: 'List Custom Registry'
+    label: 'Change Registry'
 };
 
 @injectable()
@@ -52,6 +43,12 @@ export class ChePluginCommandContribution implements CommandContribution {
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(QuickInputService)
+    protected readonly quickInputService: QuickInputService;
+
+    @inject(MonacoQuickOpenService)
+    protected readonly monacoQuickOpenService: MonacoQuickOpenService;
 
     @inject(ChePluginManager)
     protected readonly chePluginManager: ChePluginManager;
@@ -61,42 +58,100 @@ export class ChePluginCommandContribution implements CommandContribution {
             execute: () => this.addPluginRegistry()
         });
 
-        commands.registerCommand(OPEN_REGISTRY, {
-            execute: () => this.openPluginRegistry()
-        });
-
-        commands.registerCommand(LIST_DEFAULT_REGISTRY, {
-            execute: () => this.listDefaultRegistry()
-        });
-
-        commands.registerCommand(LIST_CUSTOM_REGISTRY, {
-            execute: () => this.listCustomRegistry()
+        commands.registerCommand(CHANGE_REGISTRY, {
+            execute: () => this.changePluginRegistry()
         });
     }
 
+    /**
+     * Displays prompt to add new plugin registry
+     */
     async addPluginRegistry(): Promise<void> {
-        this.messageService.info(`${PLUGIN_MANAGER_CATEGORY}: Add Plugin Registry...`);
-    }
+        const name = await this.quickInputService.open({
+            prompt: 'Name of your registry'
+        });
 
-    async openPluginRegistry(): Promise<void> {
-        this.messageService.info(`${PLUGIN_MANAGER_CATEGORY}: Open Plugin Registry...`);
-    }
+        if (!name) {
+            return;
+        }
 
-    async listDefaultRegistry(): Promise<void> {
-        // const default: ChePluginRegistry = this.chePluginFrontendService.getDefaultRegistry();
-        // console.log('> default registry ', default);
-        // this.chePluginFrontendService.changeRegistry(default);
-        const defaultRegistry = this.chePluginManager.getDefaultRegistry();
-        this.chePluginManager.changeRegistry(defaultRegistry);
-    }
+        const uri = await this.quickInputService.open({
+            prompt: 'Registry URI'
+        });
 
-    async listCustomRegistry(): Promise<void> {
-        const custom: ChePluginRegistry = {
-            name: 'My registry',
-            uri: 'https://raw.githubusercontent.com/vitaliy-guliy/che-theia-plugin-registry/master/plugins/plugins.json'
+        if (!uri) {
+            return;
+        }
+
+        const registry = {
+            name,
+            uri
         };
 
-        this.chePluginManager.changeRegistry(custom);
+        this.chePluginManager.addRegistry(registry);
+        this.chePluginManager.changeRegistry(registry);
+    }
+
+    private async pickPluginRegistry(): Promise<ChePluginRegistry | undefined> {
+        const registryList = this.chePluginManager.getRegistryList();
+
+        return new Promise<ChePluginRegistry | undefined>((resolve, reject) => {
+            // Return undefined if registry list is empty
+            if (!registryList || registryList.length === 0) {
+                resolve(undefined);
+                return;
+            }
+
+            // Active before appearing the pick menu
+            const activeElement: HTMLElement | undefined = window.document.activeElement as HTMLElement;
+
+            // ChePluginRegistry to be returned
+            let returnValue: ChePluginRegistry | undefined;
+
+            const items = registryList.map(registry =>
+                new QuickOpenItem({
+                    label: registry.name,
+                    detail: registry.uri,
+                    run: mode => {
+                        if (mode === QuickOpenMode.OPEN) {
+                            returnValue = {
+                                name: registry.name,
+                                uri: registry.uri
+                            } as ChePluginRegistry;
+                        }
+                        return true;
+                    }
+                })
+            );
+
+            // Create quick open model
+            const model = {
+                onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
+                    acceptor(items);
+                }
+            } as QuickOpenModel;
+
+            // Show pick menu
+            this.monacoQuickOpenService.open(model, {
+                fuzzyMatchLabel: true,
+                fuzzyMatchDetail: true,
+                fuzzyMatchDescription: true,
+                onClose: () => {
+                    if (activeElement) {
+                        activeElement.focus();
+                    }
+
+                    resolve(returnValue);
+                }
+            });
+        });
+    }
+
+    async changePluginRegistry(): Promise<void> {
+        const registry = await this.pickPluginRegistry();
+        if (registry) {
+            this.chePluginManager.changeRegistry(registry);
+        }
     }
 
 }

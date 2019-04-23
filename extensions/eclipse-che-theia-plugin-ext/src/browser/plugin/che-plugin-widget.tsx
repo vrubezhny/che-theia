@@ -30,7 +30,9 @@ export class ChePluginWidget extends ReactWidget {
 
     protected readonly toDisposeOnFetch = new DisposableCollection();
     protected readonly toDisposeOnSearch = new DisposableCollection();
-    protected ready = false;
+
+    // protected ready = false;
+    protected status: 'ready' | 'loading' | 'failed' = 'loading';
 
     protected needToBeRendered = true;
     protected needToRestartWorkspace = false;
@@ -73,7 +75,8 @@ export class ChePluginWidget extends ReactWidget {
     }
 
     protected async onPluginRegistryChanged(registry?: ChePluginRegistry): Promise<void> {
-        this.ready = false;
+        // this.ready = false;
+        this.status = 'loading';
         this.update();
 
         await this.updatePlugins(registry);
@@ -87,26 +90,54 @@ export class ChePluginWidget extends ReactWidget {
     }
 
     protected async updatePlugins(registry?: ChePluginRegistry): Promise<void> {
-        this.plugins = await this.chePluginManager.getPlugins();
-        this.ready = true;
+        try {
+            this.plugins = await this.chePluginManager.getPlugins();
+            // this.ready = true;
+            this.status = 'ready';
+        } catch (error) {
+            this.status = 'failed';
+        }
+
         this.update();
     }
 
     protected render(): React.ReactNode {
-        if (this.ready) {
-            if (!this.plugins.length) {
-                return <AlertMessage type='INFO' header='No plugins currently available.' />;
-            }
-
-            return <React.Fragment>
-                {this.renderUpdateWorkspaceControl()}
-                {this.renderPluginList()}
-            </React.Fragment>;
-        } else {
+        // STATUS: loading
+        if (this.status === 'loading') {
             return <div className='spinnerContainer'>
                 <div className='fa fa-spinner fa-pulse fa-3x fa-fw'></div>
             </div>;
         }
+
+        // STATUS: failed
+        if (this.status === 'failed') {
+            return <AlertMessage type='ERROR' header='Your registry is invalid' />;
+        }
+
+        // STATUS: ready
+        if (!this.plugins.length) {
+            return <AlertMessage type='INFO' header='No plugins currently available' />;
+        }
+
+        return <React.Fragment>
+            {this.renderUpdateWorkspaceControl()}
+            {this.renderPluginList()}
+        </React.Fragment>;
+
+        // if (this.ready) {
+        //     if (!this.plugins.length) {
+        //         return <AlertMessage type='INFO' header='No plugins currently available.' />;
+        //     }
+
+        //     return <React.Fragment>
+        //         {this.renderUpdateWorkspaceControl()}
+        //         {this.renderPluginList()}
+        //     </React.Fragment>;
+        // } else {
+        //     return <div className='spinnerContainer'>
+        //         <div className='fa fa-spinner fa-pulse fa-3x fa-fw'></div>
+        //     </div>;
+        // }
     }
 
     protected renderUpdateWorkspaceControl(): React.ReactNode {

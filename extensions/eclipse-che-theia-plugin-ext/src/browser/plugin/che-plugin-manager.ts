@@ -25,7 +25,6 @@ import {
 
 import { HostedPluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { MessageService, Emitter, Event } from '@theia/core/lib/common';
-// import { ConfirmDialog, ApplicationShell, SaveableWidget, NavigatableWidget } from '@theia/core/lib/browser';
 import { ConfirmDialog } from '@theia/core/lib/browser';
 
 @injectable()
@@ -41,6 +40,11 @@ export class ChePluginManager {
      * Plugin widget should display the list of plugins from this registry.
      */
     private activeRegistry: ChePluginRegistry;
+
+    /**
+     * Registry list
+     */
+    private registryList: ChePluginRegistry[];
 
     /**
      * List of installed plugins received from workspace config.
@@ -76,15 +80,6 @@ export class ChePluginManager {
         return this.workspaceConfigurationChanged.event;
     }
 
-    getDefaultRegistry(): ChePluginRegistry {
-        return this.defaultRegistry;
-    }
-
-    changeRegistry(registry: ChePluginRegistry): void {
-        this.activeRegistry = registry;
-        this.pluginRegistryChanged.fire(registry);
-    }
-
     private async initDefaults(): Promise<void> {
         if (!this.defaultRegistry) {
             this.defaultRegistry = await this.chePluginService.getDefaultRegistry();
@@ -94,10 +89,35 @@ export class ChePluginManager {
             this.activeRegistry = this.defaultRegistry;
         }
 
+        if (!this.registryList) {
+            this.registryList = [this.defaultRegistry];
+        }
+
         if (!this.installedPlugins) {
             // Get list of plugins from workspace config
             this.installedPlugins = await this.chePluginService.getWorkspacePlugins();
         }
+    }
+
+    getDefaultRegistry(): ChePluginRegistry {
+        return this.defaultRegistry;
+    }
+
+    changeRegistry(registry: ChePluginRegistry): void {
+        this.activeRegistry = registry;
+        this.pluginRegistryChanged.fire(registry);
+    }
+
+    addRegistry(registry: ChePluginRegistry): void {
+        this.registryList.push(registry);
+    }
+
+    removeRegistry(registry: ChePluginRegistry): void {
+        this.registryList = this.registryList.filter(r => r.uri !== registry.uri);
+    }
+
+    getRegistryList(): ChePluginRegistry[] {
+        return this.registryList;
     }
 
     /**
@@ -121,7 +141,6 @@ export class ChePluginManager {
     async install(plugin: ChePluginMetadata): Promise<boolean> {
         try {
             // add the plugin to workspace configuration
-            // await this.delay(1000);
             await this.chePluginService.addPlugin(plugin.key);
             await this.delay(1000);
             this.messageService.info(`Plugin ${plugin.name}:${plugin.version} has been successfully installed`);
@@ -141,7 +160,6 @@ export class ChePluginManager {
     async remove(plugin: ChePluginMetadata): Promise<boolean> {
         try {
             // remove the plugin from workspace configuration
-            // await this.delay(1000);
             await this.chePluginService.removePlugin(plugin.key);
             await this.delay(1000);
             this.messageService.info(`Plugin ${plugin.name}:${plugin.version} has been successfully removed`);
