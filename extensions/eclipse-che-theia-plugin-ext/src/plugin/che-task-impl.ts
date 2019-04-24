@@ -34,8 +34,8 @@ export class CheTaskImpl implements CheTask {
     async $runTask(id: number, config: TaskConfiguration, ctx?: string): Promise<void> {
         const runner = this.runnerMap.get(config.type);
         if (runner) {
-            const task = await runner.run(config, ctx);
-            this.taskMap.set(id, task);
+            // const task = await runner.run(config, ctx);
+            // this.taskMap.set(id, task);
         }
     }
 

@@ -39,9 +39,9 @@ export class CheTaskServiceImpl implements CheTaskService {
         this.disposableMap.set(type, this.runnerRegistry.registerRunner(type, runner));
         const runTask = async (config: TaskConfiguration, ctx?: string): Promise<Task> => {
             const id = this.taskId++;
-            for (const client of this.clients) {
-                await client.runTask(id, config, ctx);
-            }
+            // for (const client of this.clients) {
+            //     await client.runTask(id, config, ctx);
+            // }
             return new CheTask(id, this.taskManager, this.logger, { label: config.label, config, context: ctx }, this.clients);
         };
     }
