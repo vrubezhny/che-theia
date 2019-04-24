@@ -121,6 +121,7 @@ export class ChePluginWidget extends ReactWidget {
 
         return <React.Fragment>
             {this.renderUpdateWorkspaceControl()}
+            {this.renderPluginControls()}
             {this.renderPluginList()}
         </React.Fragment>;
 
@@ -148,6 +149,17 @@ export class ChePluginWidget extends ReactWidget {
         }
 
         return undefined;
+    }
+
+    protected renderPluginControls(): React.ReactNode {
+        return <div className='che-plugin-control-panel'>
+            <div>
+                <input className='search' type='text' />
+                <div className='menu'>
+                    <i className='fa fa-ellipsis-v'></i>
+                </div>
+            </div>
+        </div>;
     }
 
     protected renderPluginList(): React.ReactNode {
