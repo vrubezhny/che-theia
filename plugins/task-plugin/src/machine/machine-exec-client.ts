@@ -13,6 +13,7 @@ import { injectable, inject } from 'inversify';
 import { CheWorkspaceClient } from '../che-workspace-client';
 import { createConnection } from './websocket';
 import { applySegmentsToUri } from '../uri-helper';
+import { MachineExecWatcher } from './machine-exec-watcher';
 
 const CREATE_METHOD_NAME: string = 'create';
 const CONNECT_TERMINAL_SEGMENT: string = 'connect';
@@ -21,6 +22,7 @@ export interface MachineIdentifier {
     workspaceId: string,
     machineName: string
 }
+
 export interface MachineExec {
     identifier: MachineIdentifier,
     cmd: string[],
@@ -42,7 +44,11 @@ export class MachineExecClient {
     @inject(CheWorkspaceClient)
     protected readonly cheWorkspaceClient!: CheWorkspaceClient;
 
+    @inject(MachineExecWatcher)
+    protected readonly machineExecWatcher!: MachineExecWatcher;
+
     async getExecId(machineExec: MachineExec): Promise<number> {
+        console.log('!!!!!!!!!!!!!!!!!! getExecId');
         const connection = await this.getConnection();
         const request = new rpc.RequestType<MachineExec, number, void, void>(CREATE_METHOD_NAME);
         return await connection.sendRequest(request, machineExec);
@@ -60,6 +66,9 @@ export class MachineExecClient {
 
         const execServerUrl = applySegmentsToUri(machineExecServerEndpoint, CONNECT_TERMINAL_SEGMENT);
         this.connection = await createConnection(execServerUrl);
+
+        this.machineExecWatcher.init(this.connection);
+
         return this.connection;
     }
 

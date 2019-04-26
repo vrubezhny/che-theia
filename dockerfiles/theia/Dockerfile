@@ -92,7 +92,7 @@ WORKDIR ${HOME}
 ARG GITHUB_TOKEN
 
 # Define che-theia branch to use for plugins
-ARG CHE_THEIA_PLUGIN_BRANCH=master
+ARG CHE_THEIA_PLUGIN_BRANCH=trackTasks
 
 # Check github limit
 RUN if [ ! -z "${GITHUB_TOKEN-}" ]; then \

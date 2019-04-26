@@ -42,16 +42,30 @@ export class TasksPreviewManager {
     }
 
     async showPreviews() {
+        console.log('!!!!!!!!!!!!!!!!!! show previews');
         const executions = theia.tasks.taskExecutions;
         const tasks = executions.map(execution => execution.task);
 
         const context = startPoint.getContext();
-        const previewsWidget = await this.previewUrlsWidgetFactory.createWidget({ tasks: tasks });
+        const previewsWidget = await this.previewUrlsWidgetFactory.createWidget({ tasks });
 
         const panel = this.providePanel();
         panel.webview.html = previewsWidget.getHtml();
         panel.webview.onDidReceiveMessage(message => this.onMessageReceived(message), undefined, context.subscriptions);
         panel.onDidDispose(() => { this.currentPanel = undefined; }, undefined, context.subscriptions);
+    }
+
+    onTaskStateChanged(task: theia.Task) {
+        console.log('!!!!!!!!!!! onTaskStateChanged ');
+        if (this.currentPanel) {
+            console.log('!!!!!!!!!!! onTaskStateChanged ' + this.currentPanel.visible + ' /// ' + this.currentPanel.active);
+        } else {
+            console.log('!!!!!!!!!!! onTaskStateChanged NO panel ');
+        }
+
+        if (!this.currentPanel || this.currentPanel.visible) {
+            this.showPreviews();
+        }
     }
 
     // tslint:disable-next-line:no-any

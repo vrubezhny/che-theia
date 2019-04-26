@@ -26,4 +26,4 @@ extensions:
     - plugins/ports-plugin
     - plugins/task-plugin
     - plugins/welcome-plugin
-  checkoutTo: master
+  checkoutTo: trackTasks

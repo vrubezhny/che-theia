@@ -46,8 +46,8 @@ export class CheTaskEventsHandler {
             if (task.definition.type !== CHE_TASK_TYPE) {
                 return;
             }
-            // TODO handle stopped tasks, at the moment we can not track che task end events
-            console.log('Task is stopped ' + event.execution.task.name);
+            console.log('!!!!!!!!!!!!!!!!!! on did end task');
+            this.onDidEndTask(task);
         }, undefined, startPoint.getSubscriptions());
     }
 
@@ -58,7 +58,7 @@ export class CheTaskEventsHandler {
             return;
         }
 
-        this.tasksPreviewManager.showPreviews();
+        this.tasksPreviewManager.onTaskStateChanged(task);
 
         const mode = this.taskPreviewMode.get();
         switch (mode) {
@@ -79,6 +79,16 @@ export class CheTaskEventsHandler {
                 break;
             }
         }
+    }
+
+    onDidEndTask(task: theia.Task): void {
+        const cheTaskDefinition = task.definition as CheTaskDefinition;
+        const previewUrl = cheTaskDefinition.previewUrl;
+        if (!previewUrl) {
+            return;
+        }
+
+        this.tasksPreviewManager.onTaskStateChanged(task);
     }
 
     async askUser(message: string, url: string) {

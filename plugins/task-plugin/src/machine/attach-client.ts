@@ -12,6 +12,8 @@ import { injectable, inject } from 'inversify';
 import { CheWorkspaceClient } from '../che-workspace-client';
 import { ReconnectingWebSocket } from './websocket';
 import { applySegmentsToUri } from '../uri-helper';
+import { MachineExecWatcher } from './machine-exec-watcher';
+import * as startPoint from '../task-plugin-backend';
 
 const ATTACH_TERMINAL_SEGMENT: string = 'attach';
 
@@ -24,6 +26,9 @@ export class AttachTerminalClient {
 
     @inject(CheWorkspaceClient)
     protected readonly cheWorkspaceClient!: CheWorkspaceClient;
+
+    @inject(MachineExecWatcher)
+    protected readonly machineExecWatcher: MachineExecWatcher;
 
     async connectTerminalProcess(terminalId: number, outputHandler: TerminalProcessOutputHandler): Promise<void> {
         const termServerEndpoint = await this.cheWorkspaceClient.getMachineExecServerURL();
@@ -39,6 +44,17 @@ export class AttachTerminalClient {
         webSocket.onError = (error: Error) => {
             console.error('Websocket error:', error);
         };
-        // TODO close webSocket when task is completed; event with runtime info is not implemented for plugin API at the moment
+
+        const disposable = this.machineExecWatcher.onExit(event => {
+            console.log('++++++++++ AttachTerminalClient ++++ machineExecWatcher.onExit');
+            if (event.id === terminalId) {
+                console.log('+++ AttachTerminalClient ++++ event.id === terminalId ');
+                webSocket.close();
+                disposable.dispose();
+            } else {
+                console.log('+++ AttachTerminalClient ++++ event.id NOT === terminalId ' + event.id + ' /// ' + terminalId);
+            }
+        });
+        startPoint.getSubscriptions().push(disposable);
     }
 }
