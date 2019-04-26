@@ -24,6 +24,7 @@ export class CheTaskMainImpl implements CheTaskMain {
         this.cheTaskClient.setTaskInfoHandler(id => proxy.$getTaskInfo(id));
         this.cheTaskClient.setTaskExitedHandler(id => proxy.$onTaskExited(id));
         this.cheTaskClient.setRunTaskHandler((id, config, ctx) => proxy.$runTask(id, config, ctx));
+        console.log('**** CheTaskMainImpl **** constructor ');
     }
     $registerTaskRunner(type: string): Promise<void> {
         return this.delegate.registerTaskRunner(type);

@@ -31,6 +31,7 @@ export class CheTaskClientImpl implements CheTaskClient {
     }
 
     async getTaskInfo(id: number): Promise<TaskInfo | undefined> {
+        console.log('///////////////////////////////////////// getTaskInfo ');
         for (const taskInfoHandler of this.taskInfoHandlers) {
             console.log('//////////// getTaskInfo ' + id);
             try {
@@ -50,6 +51,7 @@ export class CheTaskClientImpl implements CheTaskClient {
     }
 
     async onTaskExited(id: number): Promise<void> {
+        console.log('///////////////////////////////////////// onTaskExited ');
         for (const taskExitedHandler of this.taskExitedHandlers) {
             console.log('//////////// onTaskExited ' + id);
             try {
@@ -71,14 +73,17 @@ export class CheTaskClientImpl implements CheTaskClient {
     }
 
     setTaskInfoHandler(handler: (id: number) => Promise<TaskInfo>) {
+        console.log('//////////// setTaskInfoHandler ');
         this.taskInfoHandlers.push(handler);
     }
 
     setRunTaskHandler(handler: (id: number, config: TaskConfiguration, ctx?: string) => Promise<void>) {
+        console.log('//////////// setRunTaskHandler ');
         this.runTaskHandlers.push(handler);
     }
 
     setTaskExitedHandler(handler: (id: number) => Promise<void>) {
+        console.log('//////////// setTaskExitedHandler ');
         this.taskExitedHandlers.push(handler);
     }
 }
