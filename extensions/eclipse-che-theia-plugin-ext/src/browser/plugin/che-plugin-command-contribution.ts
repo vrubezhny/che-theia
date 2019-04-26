@@ -23,20 +23,48 @@ import { QuickInputService } from '@theia/core/lib/browser';
 import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
 
-const PLUGIN_MANAGER_ID = 'plugin-manager';
-const PLUGIN_MANAGER_CATEGORY = 'Plugin Manager';
+export namespace ChePluginManagerCommands {
 
-export const ADD_REGISTRY: Command = {
-    id: `${PLUGIN_MANAGER_ID}:add-registry`,
-    category: PLUGIN_MANAGER_CATEGORY,
-    label: 'Add Registry'
-};
+    const PLUGIN_MANAGER_ID = 'plugin-manager';
+    const PLUGIN_MANAGER_CATEGORY = 'Plugin Manager';
 
-export const CHANGE_REGISTRY: Command = {
-    id: `${PLUGIN_MANAGER_ID}:change-registry`,
-    category: PLUGIN_MANAGER_CATEGORY,
-    label: 'Change Registry'
-};
+    export const SHOW_AVAILABLE_PLUGINS: Command = {
+        id: `${PLUGIN_MANAGER_ID}:show-available-plugins`,
+        category: PLUGIN_MANAGER_CATEGORY,
+        label: 'Show Available Plugins'
+    };
+
+    export const SHOW_INSTALLED_PLUGINS: Command = {
+        id: `${PLUGIN_MANAGER_ID}:show-installed-plugins`,
+        category: PLUGIN_MANAGER_CATEGORY,
+        label: 'Show Installed Plugins'
+    };
+
+    export const SHOW_EDITORS: Command = {
+        id: `${PLUGIN_MANAGER_ID}:show-editors`,
+        category: PLUGIN_MANAGER_CATEGORY,
+        label: 'Show Editors'
+    };
+
+    export const SHOW_BUILT_IN_PLUGINS: Command = {
+        id: `${PLUGIN_MANAGER_ID}:show-built-in-plugins`,
+        category: PLUGIN_MANAGER_CATEGORY,
+        label: 'Show Built-in Plugins'
+    };
+
+    export const ADD_REGISTRY: Command = {
+        id: `${PLUGIN_MANAGER_ID}:add-registry`,
+        category: PLUGIN_MANAGER_CATEGORY,
+        label: 'Add Registry'
+    };
+
+    export const CHANGE_REGISTRY: Command = {
+        id: `${PLUGIN_MANAGER_ID}:change-registry`,
+        category: PLUGIN_MANAGER_CATEGORY,
+        label: 'Change Registry'
+    };
+
+}
 
 @injectable()
 export class ChePluginCommandContribution implements CommandContribution {
@@ -54,13 +82,47 @@ export class ChePluginCommandContribution implements CommandContribution {
     protected readonly chePluginManager: ChePluginManager;
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(ADD_REGISTRY, {
+        commands.registerCommand(ChePluginManagerCommands.SHOW_AVAILABLE_PLUGINS, {
+            // activate: true,
+            execute: () => this.showAvailablePlugins()
+        });
+        commands.registerCommand(ChePluginManagerCommands.SHOW_INSTALLED_PLUGINS, {
+            // activate: true,
+            execute: () => this.showInstalledPlugins()
+        });
+        commands.registerCommand(ChePluginManagerCommands.SHOW_EDITORS, {
+            // toggle: true,
+            // isToggle: () => { return true },
+            // activate: true,
+            execute: () => this.showEditors()
+        });
+        commands.registerCommand(ChePluginManagerCommands.SHOW_BUILT_IN_PLUGINS, {
+            // isEnabled: () => this.disabled(),
+            // isVisible: () => !!this.cppManager.getActiveConfig(),
+            execute: () => this.showBuiltInPlugins()
+        });
+        commands.registerCommand(ChePluginManagerCommands.ADD_REGISTRY, {
             execute: () => this.addPluginRegistry()
         });
-
-        commands.registerCommand(CHANGE_REGISTRY, {
+        commands.registerCommand(ChePluginManagerCommands.CHANGE_REGISTRY, {
             execute: () => this.changePluginRegistry()
         });
+    }
+
+    disabled(): boolean {
+        return false;
+    }
+
+    async showAvailablePlugins() {
+    }
+
+    async showInstalledPlugins() {
+    }
+
+    async showEditors() {
+    }
+
+    async showBuiltInPlugins() {
     }
 
     /**

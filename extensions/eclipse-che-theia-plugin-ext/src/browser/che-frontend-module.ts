@@ -28,6 +28,7 @@ import { CheTaskClientImpl } from './che-task-client';
 import { ChePluginViewContribution } from './plugin/che-plugin-view-contribution';
 import { ChePluginWidget } from './plugin/che-plugin-widget';
 import { ChePluginManager } from './plugin/che-plugin-manager';
+import { ChePluginMenu } from './plugin/che-plugin-menu';
 import { ChePluginCommandContribution } from './plugin/che-plugin-command-contribution';
 import { bindChePluginPreferences } from './plugin/che-plugin-preferences';
 
@@ -58,6 +59,7 @@ export default new ContainerModule(bind => {
 
     bindViewContribution(bind, ChePluginViewContribution);
 
+    bind(ChePluginMenu).toSelf().inSingletonScope();
     bind(ChePluginWidget).toSelf().inSingletonScope();
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: ChePluginViewContribution.PLUGINS_WIDGET_ID,

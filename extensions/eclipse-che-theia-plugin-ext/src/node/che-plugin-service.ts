@@ -213,61 +213,11 @@ export class ChePluginServiceImpl implements ChePluginService {
         const workspace: cheApi.workspace.Workspace = await this.cheApiService.currentWorkspace();
 
         if (workspace.config && workspace.config.attributes && workspace.config.attributes['plugins']) {
-            // Uncomment this after fixing a bug with plugin brocker
-            //      const plugins = workspace.config.attributes['plugins'];
-            //      return plugins.split(',');
-
-            // There is a bug in plugin brocker.
-            //      Che plugin broker fails to find meta.yaml
-            //      https://github.com/eclipse/che-plugin-registry/pull/27
-            //
-            // We need to make plugin management working
-            // Remove following code after fixing the bug.
-
-            const plugins = workspace.config.attributes['plugins'].split(',');
-            const unpatchedPlugins = plugins.map(p => this.unpatch(p));
-            return unpatchedPlugins;
-        }
-
-        return Promise.reject('Unable to get Workspace plugins');
-    }
-
-    private async getWorkspacePlugins_ORIGINAL(): Promise<string[]> {
-        const workspace: cheApi.workspace.Workspace = await this.cheApiService.currentWorkspace();
-
-        if (workspace.config && workspace.config.attributes && workspace.config.attributes['plugins']) {
             const plugins = workspace.config.attributes['plugins'];
             return plugins.split(',');
         }
 
         return Promise.reject('Unable to get Workspace plugins');
-    }
-
-    // adds '/plugin' to make in possible to proper display installed plugins
-    private unpatch(p: string): string {
-        if (p.indexOf('/') > 0) {
-            const p1 = p.substring(0, p.lastIndexOf('/'));
-            console.log('p1', p1);
-
-            const p2 = p.substring(p.lastIndexOf('/'));
-            console.log('p2', p2);
-
-            const p3 = p1 + '/plugins' + p2;
-            console.log('p3', p3);
-
-            return p3;
-        } else {
-            return p;
-        }
-    }
-
-    // removes '/plugin' to make it possible to set in workspace configuration
-    private patch(p: string): string {
-        if (p.indexOf('/plugins/') > 0) {
-            return p.replace('/plugins/', '/');
-        } else {
-            return p;
-        }
     }
 
     /**
@@ -292,16 +242,8 @@ export class ChePluginServiceImpl implements ChePluginService {
      * Adds a plugin to workspace configuration.
      */
     async addPlugin(pluginKey: string): Promise<void> {
-        // There is a bug in plugin brocker.
-        //      Che plugin broker fails to find meta.yaml
-        //      https://github.com/eclipse/che-plugin-registry/pull/27
-        //
-        // We need to make plugin management working
-        // Remove following code after fixing the bug.
-        pluginKey = this.patch(pluginKey);
-
         try {
-            const plugins: string[] = await this.getWorkspacePlugins_ORIGINAL();
+            const plugins: string[] = await this.getWorkspacePlugins();
             plugins.push(pluginKey);
             await this.setWorkspacePlugins(plugins);
         } catch (error) {
@@ -314,16 +256,8 @@ export class ChePluginServiceImpl implements ChePluginService {
      * Removes a plugin from workspace configuration.
      */
     async removePlugin(pluginKey: string): Promise<void> {
-        // There is a bug in plugin brocker.
-        //      Che plugin broker fails to find meta.yaml
-        //      https://github.com/eclipse/che-plugin-registry/pull/27
-        //
-        // We need to make plugin management working
-        // Remove following code after fixing the bug.
-        pluginKey = this.patch(pluginKey);
-
         try {
-            const plugins: string[] = await this.getWorkspacePlugins_ORIGINAL();
+            const plugins: string[] = await this.getWorkspacePlugins();
             const filteredPlugins = plugins.filter(p => p !== pluginKey);
             await this.setWorkspacePlugins(filteredPlugins);
         } catch (error) {

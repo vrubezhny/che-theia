@@ -14,6 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+.che-plugins-tab-icon::before {
+    content: "\F14A";
+}
+
+/*-----------------------------------------------------------------------------
+| Notification informing that workspace has been changed
+|----------------------------------------------------------------------------*/
+
 .che-plugins-notification {
     position: relative;
     width: 100%;
@@ -31,7 +39,7 @@
 }
 
 .che-plugins-notification .theia-success-alert {
-    transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+    transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
     /* border-radius: 2px; */
     padding: 7px;
 }
@@ -51,6 +59,9 @@
     text-overflow: ellipsis;
 }
 
+/*-----------------------------------------------------------------------------
+| Control pane. Contains text box to filter plugins and menu button
+|----------------------------------------------------------------------------*/
 
 .che-plugin-control-panel {
     width: 100%;
@@ -66,6 +77,10 @@
     overflow: hidden;
 }
 
+/*-----------------------------------------------------------------------------
+| Text box to filter plugins
+|----------------------------------------------------------------------------*/
+
 .che-plugin-control-panel .search {
     position: absolute;
     left: 18px;
@@ -79,7 +94,11 @@
     border-color: var(--theia-accent-color3);
 }
 
-.che-plugin-control-panel .menu {
+/*-----------------------------------------------------------------------------
+| Menu button
+|----------------------------------------------------------------------------*/
+
+.che-plugin-control-panel .menu-button {
     position: absolute;
     width: 24px;
     height: 24px;
@@ -91,11 +110,25 @@
     line-height: 24px;
     cursor: pointer;
     color: var(--theia-ui-font-color2);
+    box-sizing: border-box;
 }
 
-.che-plugin-control-panel .menu:hover {
+.che-plugin-control-panel .menu-button:hover {
     color: var(--theia-ui-font-color1);
 }
+
+.che-plugin-control-panel .menu-button-active {
+    color: var(--theia-ui-font-color1);
+    border: none;
+    background: var(--theia-menu-color1);
+    border-left: var(--theia-border-width) solid var(--theia-border-color1);
+    border-right: var(--theia-border-width) solid var(--theia-border-color1);
+    box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.2);
+}
+
+/*-----------------------------------------------------------------------------
+| List of plugins
+|----------------------------------------------------------------------------*/
 
 .che-plugin-list {
     position: relative;
@@ -249,6 +282,10 @@
     color: var(--theia-disabled-color3);
 }
 
+/*-----------------------------------------------------------------------------
+| Plugin actions
+|----------------------------------------------------------------------------*/
+
 .che-plugin-list .che-plugin-action-add,
 .che-plugin-list .che-plugin-action-remove,
 .che-plugin-list .che-plugin-action-installing,
@@ -306,8 +343,4 @@
 .che-plugin-list .che-plugin-action-removing {
     color: var(--theia-ui-button-font-color-secondary-disabled);
     background-color: var(--theia-ui-button-color-secondary-disabled);
-}
-
-.che-plugins-tab-icon::before {
-    content: "\F14A";
 }

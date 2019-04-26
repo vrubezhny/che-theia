@@ -16,29 +16,26 @@
 
 import { injectable, inject } from 'inversify';
 import { Message } from '@phosphor/messaging';
-import { DisposableCollection } from '@theia/core';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import * as React from 'react';
 import { ChePluginRegistry, ChePluginMetadata } from '../../common/che-protocol';
 import { ChePluginManager } from './che-plugin-manager';
+import { ChePluginMenu } from './che-plugin-menu';
 
 @injectable()
 export class ChePluginWidget extends ReactWidget {
 
     protected plugins: ChePluginMetadata[] = [];
 
-    protected readonly toDisposeOnFetch = new DisposableCollection();
-    protected readonly toDisposeOnSearch = new DisposableCollection();
-
-    // protected ready = false;
     protected status: 'ready' | 'loading' | 'failed' = 'loading';
 
     protected needToBeRendered = true;
     protected needToRestartWorkspace = false;
 
     constructor(
-        @inject(ChePluginManager) protected chePluginManager: ChePluginManager
+        @inject(ChePluginManager) protected chePluginManager: ChePluginManager,
+        @inject(ChePluginMenu) protected chePluginMenu: ChePluginMenu
     ) {
         super();
         this.id = 'che-plugins';
@@ -75,7 +72,6 @@ export class ChePluginWidget extends ReactWidget {
     }
 
     protected async onPluginRegistryChanged(registry?: ChePluginRegistry): Promise<void> {
-        // this.ready = false;
         this.status = 'loading';
         this.update();
 
@@ -92,7 +88,6 @@ export class ChePluginWidget extends ReactWidget {
     protected async updatePlugins(registry?: ChePluginRegistry): Promise<void> {
         try {
             this.plugins = await this.chePluginManager.getPlugins();
-            // this.ready = true;
             this.status = 'ready';
         } catch (error) {
             this.status = 'failed';
@@ -102,6 +97,54 @@ export class ChePluginWidget extends ReactWidget {
     }
 
     protected render(): React.ReactNode {
+        // // STATUS: loading
+        // if (this.status === 'loading') {
+        //     return <div className='spinnerContainer'>
+        //         <div className='fa fa-spinner fa-pulse fa-3x fa-fw'></div>
+        //     </div>;
+        // }
+
+        // // STATUS: failed
+        // if (this.status === 'failed') {
+        //     return <AlertMessage type='ERROR' header='Your registry is invalid' />;
+        // }
+
+        // // STATUS: ready
+        // if (!this.plugins.length) {
+        //     return <AlertMessage type='INFO' header='No plugins currently available' />;
+        // }
+
+        return <React.Fragment>
+            {this.renderUpdateWorkspaceControl()}
+            <ChePluginListControls chePluginMenu={this.chePluginMenu} />
+            {this.renderPluginList()}
+        </React.Fragment>;
+
+        // {this.renderPluginControls()}
+    }
+
+    protected renderUpdateWorkspaceControl(): React.ReactNode {
+        if (this.needToRestartWorkspace) {
+            return <div className='che-plugins-notification' onClick={this.restartWorkspace}>
+                <AlertMessage type='SUCCESS' header='Restart your workspace to apply changes.' />
+            </div>;
+        }
+
+        return undefined;
+    }
+
+    // protected renderPluginControls(): React.ReactNode {
+    //     return <div className='che-plugin-control-panel'>
+    //         <div>
+    //             <input className='search' type='text' />
+    //             <div className='menu'>
+    //                 <i className='fa fa-ellipsis-v'></i>
+    //             </div>
+    //         </div>
+    //     </div>;
+    // }
+
+    protected renderPluginList(): React.ReactNode {
         // STATUS: loading
         if (this.status === 'loading') {
             return <div className='spinnerContainer'>
@@ -119,56 +162,9 @@ export class ChePluginWidget extends ReactWidget {
             return <AlertMessage type='INFO' header='No plugins currently available' />;
         }
 
-        return <React.Fragment>
-            {this.renderUpdateWorkspaceControl()}
-            {this.renderPluginControls()}
-            {this.renderPluginList()}
-        </React.Fragment>;
-
-        // if (this.ready) {
-        //     if (!this.plugins.length) {
-        //         return <AlertMessage type='INFO' header='No plugins currently available.' />;
-        //     }
-
-        //     return <React.Fragment>
-        //         {this.renderUpdateWorkspaceControl()}
-        //         {this.renderPluginList()}
-        //     </React.Fragment>;
-        // } else {
-        //     return <div className='spinnerContainer'>
-        //         <div className='fa fa-spinner fa-pulse fa-3x fa-fw'></div>
-        //     </div>;
-        // }
-    }
-
-    protected renderUpdateWorkspaceControl(): React.ReactNode {
-        if (this.needToRestartWorkspace) {
-            return <div className='che-plugins-notification' onClick={this.restartWorkspace}>
-                <AlertMessage type='SUCCESS' header='Restart your workspace to apply changes.' />
-            </div>;
-        }
-
-        return undefined;
-    }
-
-    protected renderPluginControls(): React.ReactNode {
-        return <div className='che-plugin-control-panel'>
-            <div>
-                <input className='search' type='text' />
-                <div className='menu'>
-                    <i className='fa fa-ellipsis-v'></i>
-                </div>
-            </div>
-        </div>;
-    }
-
-    protected renderPluginList(): React.ReactNode {
         const list = this.plugins.map(plugin =>
             <ChePlugin key={plugin.key}
                 plugin={plugin} pluginManager={this.chePluginManager}></ChePlugin>);
-        // <ChePlugin key={plugin.id + ':' + plugin.version}
-        //     plugin={plugin} pluginManager={this.chePluginManager}></ChePlugin>);
-
         return <div className='che-plugin-list'>
             {list}
         </div>;
@@ -176,6 +172,54 @@ export class ChePluginWidget extends ReactWidget {
 
     protected restartWorkspace = async () => {
         await this.chePluginManager.restartWorkspace();
+    }
+
+}
+
+export class ChePluginListControls extends React.Component<{ chePluginMenu: ChePluginMenu }, { menuButtonPressed: boolean }> {
+
+    constructor(props: { chePluginMenu: ChePluginMenu }) {
+        super(props);
+
+        this.state = {
+            menuButtonPressed: false
+        };
+
+        props.chePluginMenu.onMenuClosed(() => {
+            this.setState({
+                menuButtonPressed: false
+            });
+        });
+    }
+
+    render(): React.ReactNode {
+        return <div className='che-plugin-control-panel'>
+            <div>
+                <input className='search' type='text' />
+                <div tabIndex={0} className={this.menuButtonStyle()} onFocus={this.onFocus} >
+                    <i className='fa fa-ellipsis-v'></i>
+                </div>
+            </div>
+        </div>;
+    }
+
+    protected menuButtonStyle(): string {
+        if (this.state.menuButtonPressed) {
+            return 'menu-button menu-button-active';
+        } else {
+            return 'menu-button';
+        }
+    }
+
+    protected onFocus = async param => {
+        const left = document.activeElement.getBoundingClientRect().left;
+        const top = document.activeElement.getBoundingClientRect().top + document.activeElement.getBoundingClientRect().height;
+
+        this.setState({
+            menuButtonPressed: true
+        });
+
+        this.props.chePluginMenu.show(left, top);
     }
 
 }
@@ -192,10 +236,6 @@ export class ChePlugin extends React.Component<ChePlugin.Props, ChePlugin.State>
             pluginState: state
         };
     }
-
-    // id(): string {
-    //     return this.props.plugin.id + ':' + this.props.plugin.version;
-    // }
 
     render(): React.ReactNode {
         const plugin = this.props.plugin;
