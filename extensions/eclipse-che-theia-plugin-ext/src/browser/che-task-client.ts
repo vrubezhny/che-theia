@@ -53,7 +53,7 @@ export class CheTaskClientImpl implements CheTaskClient {
         for (const taskExitedHandler of this.taskExitedHandlers) {
             console.log('//////////// onTaskExited ' + id);
             try {
-                taskExitedHandler(id);
+                await taskExitedHandler(id);
                 console.log('//////////// onTaskExited //// after run taskExitedHandler' + id);
             } catch (e) {
                 // allow another hanlers to handle request
