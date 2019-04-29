@@ -89,7 +89,7 @@ export class CheTaskRunner {
             const execId = await this.machineExecClient.getExecId(machineExec);
             console.log('******************** PLUGIN after get exec id');
             // const terminalWidget = await this.terminalWidgetFactory.createWidget({ title: taskConfig.label, terminalId: execId });
-            console.log('******************** PLUGIN after create terminal widget');
+            console.log('******************** PLUGIN NOT create terminal widget');
             // terminalWidget.connectTerminalProcess();
             console.log('******************** PLUGIN after connect terminal process');
 
