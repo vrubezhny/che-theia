@@ -122,6 +122,12 @@ export class ChePluginManager {
 
         if (!this.registryList) {
             this.registryList = [this.defaultRegistry];
+
+            this.registryList.push({
+                name: 'Visual Studio Code plugins',
+                uri: 'https://marketplace.visualstudio.com/vscode'
+            });
+
             await this.restoreRegistryList();
         }
 

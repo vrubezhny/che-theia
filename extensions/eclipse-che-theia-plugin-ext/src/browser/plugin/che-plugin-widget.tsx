@@ -212,8 +212,10 @@ export class ChePluginListControls extends React.Component<{ chePluginMenu: CheP
     }
 
     protected onFocus = async param => {
-        const left = document.activeElement.getBoundingClientRect().left;
-        const top = document.activeElement.getBoundingClientRect().top + document.activeElement.getBoundingClientRect().height;
+        const rect = document.activeElement.getBoundingClientRect();
+
+        const left = rect.left;
+        const top = rect.top + rect.height - 2;
 
         this.setState({
             menuButtonPressed: true

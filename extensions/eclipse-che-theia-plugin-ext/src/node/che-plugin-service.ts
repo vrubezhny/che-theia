@@ -66,7 +66,7 @@ export class ChePluginServiceImpl implements ChePluginService {
                 }
 
                 this.defaultRegistry = {
-                    name: 'Default',
+                    name: 'Eclipse Che plugins',
                     uri: uri
                 };
 
@@ -80,7 +80,7 @@ export class ChePluginServiceImpl implements ChePluginService {
 
             // A temporary solution. Should throw an error instead.
             this.defaultRegistry = {
-                name: 'Default',
+                name: 'Eclipse Che plugin registry',
                 uri: 'https://che-plugin-registry.openshift.io/plugins/'
             };
             return this.defaultRegistry;

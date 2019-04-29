@@ -83,11 +83,13 @@
 
 .che-plugin-control-panel .search {
     position: absolute;
-    left: 18px;
+    left: 8px;
     top: 0px;
-    width: calc(100% - 60px);
-    height: 20px;
+    width: calc(100% - 16px);
+    height: 24px;
     border: 1px solid transparent;
+    box-sizing: border-box;
+    padding-right: 24px;
 }
 
 .che-plugin-control-panel .search:focus {
@@ -99,15 +101,15 @@
 |----------------------------------------------------------------------------*/
 
 .che-plugin-control-panel .menu-button {
+    /* background-color: brown; */
     position: absolute;
     width: 24px;
     height: 24px;
-    /* background-color: brown; */
-    right: 10px;
+    right: 8px;
     top: 0px;
     overflow: hidden;
     text-align: center;
-    line-height: 24px;
+    line-height: 26px;
     cursor: pointer;
     color: var(--theia-ui-font-color2);
     box-sizing: border-box;
@@ -121,8 +123,8 @@
     color: var(--theia-ui-font-color1);
     border: none;
     background: var(--theia-menu-color1);
-    border-left: var(--theia-border-width) solid var(--theia-border-color1);
-    border-right: var(--theia-border-width) solid var(--theia-border-color1);
+    /* border-left: var(--theia-border-width) solid var(--theia-border-color1); */
+    /* border-right: var(--theia-border-width) solid var(--theia-border-color1); */
     box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.2);
 }
 
