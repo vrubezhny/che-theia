@@ -71,6 +71,7 @@ export class TasksPreviewManager {
         if (message.command !== 'preview') {
             return;
         }
+        console.log('!!!!!!!!!!! onMessageReceived ' + this.currentPanel.visible + ' /// ' + this.currentPanel.active);
 
         const url = message.url;
         if (EXTERNALLY_CHOICE === message.choice) {
