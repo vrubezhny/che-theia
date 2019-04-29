@@ -56,16 +56,14 @@ export class TasksPreviewManager {
     }
 
     onTaskStateChanged(task: theia.Task) {
-        console.log('!!!!!!!!!!! onTaskStateChanged ');
+        console.log('!!!!!!!!!!! onTaskStateChanged === ' + task.name);
         if (this.currentPanel) {
             console.log('!!!!!!!!!!! onTaskStateChanged ' + this.currentPanel.visible + ' /// ' + this.currentPanel.active);
         } else {
             console.log('!!!!!!!!!!! onTaskStateChanged NO panel ');
         }
 
-        if (!this.currentPanel || this.currentPanel.visible) {
-            this.showPreviews();
-        }
+        this.showPreviews();
     }
 
     // tslint:disable-next-line:no-any
@@ -92,7 +90,7 @@ export class TasksPreviewManager {
             this.currentPanel.dispose();
         }
 
-        return this.currentPanel = theia.window.createWebviewPanel(PREVIEW_URL_VIEW_TYPE, PREVIEW_URL_TITLE, { area: theia.WebviewPanelTargetArea.Bottom }, {
+        return this.currentPanel = theia.window.createWebviewPanel(PREVIEW_URL_VIEW_TYPE, PREVIEW_URL_TITLE, { area: theia.WebviewPanelTargetArea.Bottom, preserveFocus: true }, {
             enableScripts: true,
             localResourceRoots: [theia.Uri.file(path.join(startPoint.getContext().extensionPath, 'resources'))]
         });

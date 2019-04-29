@@ -59,7 +59,7 @@ export class CheTaskClientImpl implements CheTaskClient {
                 console.log('//////////// onTaskExited //// after run taskExitedHandler' + id);
             } catch (e) {
                 // allow another hanlers to handle request
-                console.log(console.log('//////////// getTaskInfo  //// ERROR ' + id));
+                console.log(console.log('//////////// onTaskExited  //// ERROR ' + id + ' //// ' + e));
             }
         }
     }
