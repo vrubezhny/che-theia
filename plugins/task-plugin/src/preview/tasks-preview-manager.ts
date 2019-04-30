@@ -46,13 +46,10 @@ export class TasksPreviewManager {
         const executions = theia.tasks.taskExecutions;
         const tasks = executions.map(execution => execution.task);
 
-        const context = startPoint.getContext();
         const previewsWidget = await this.previewUrlsWidgetFactory.createWidget({ tasks });
 
         const panel = this.providePanel();
         panel.webview.html = previewsWidget.getHtml();
-        panel.webview.onDidReceiveMessage(message => this.onMessageReceived(message), undefined, context.subscriptions);
-        panel.onDidDispose(() => { this.currentPanel = undefined; }, undefined, context.subscriptions);
     }
 
     onTaskStateChanged(task: theia.Task) {
@@ -88,13 +85,20 @@ export class TasksPreviewManager {
         if (this.currentPanel) {
             // TODO improve way of updating webview panel
             // depends on https://github.com/theia-ide/theia/issues/4342 and https://github.com/theia-ide/theia/issues/4339
-            this.currentPanel.dispose();
+            // this.currentPanel.dispose();
+            return this.currentPanel;
         }
 
-        return this.currentPanel = theia.window.createWebviewPanel(PREVIEW_URL_VIEW_TYPE, PREVIEW_URL_TITLE, { area: theia.WebviewPanelTargetArea.Bottom, preserveFocus: true }, {
+        this.currentPanel = theia.window.createWebviewPanel(PREVIEW_URL_VIEW_TYPE, PREVIEW_URL_TITLE, { area: theia.WebviewPanelTargetArea.Bottom, preserveFocus: true }, {
             enableScripts: true,
             localResourceRoots: [theia.Uri.file(path.join(startPoint.getContext().extensionPath, 'resources'))]
         });
+
+        const context = startPoint.getContext();
+        this.currentPanel.webview.onDidReceiveMessage(message => this.onMessageReceived(message), undefined, context.subscriptions);
+        this.currentPanel.onDidDispose(() => { this.currentPanel = undefined; }, undefined, context.subscriptions);
+
+        return this.currentPanel;
     }
 
     private async setStatusBarPreviewUrlItem() {
